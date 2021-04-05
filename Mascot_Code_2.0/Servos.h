@@ -18,11 +18,13 @@ int GetPos()
   float negativeXLim = -130;
   float positiveZLim = 170;
   float negativeZLim = -170;
+  float rollAngle = 36;
 
 //  Serial.print("StepperX: ");
 //  Serial.println(stepperX.currentPosition());
 //  Serial.print("StepperZ: ");
 //  Serial.println(stepperZ.currentPosition());
+  
 
   if (stepperX.currentPosition() != 0)
   {
@@ -34,6 +36,18 @@ int GetPos()
   {
     positiveZLim += stepperZ.currentPosition()/StepsPerMM;
     negativeZLim += stepperZ.currentPosition()/StepsPerMM;
+  }
+
+  if (rollAngle != 0)
+  {
+    positiveXLim = positiveXLim*cos(rollAngle) - positiveZLim*sin(rollAngle);
+    positiveZLim = positiveXLim*sin(rollAngle) - positiveZLim*cos(rollAngle);
+
+    negativeXLim = negativeXLim*cos(rollAngle) - negativeZLim*sin(rollAngle);
+    negativeZLim = negativeXLim*sin(rollAngle) - negativeZLim*cos(rollAngle);
+//
+//    DotPos[xpos] = DotPos[xpos]*cos(rollAngle) - DotPos[zpos]*sin(rollAngle);
+//    DotPos[zpos] = DotPos[xpos]*sin(rollAngle) - DotPos[zpos]*cos(rollAngle);
   }
 
 //  Serial.print("positiveXlim: ");

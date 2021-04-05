@@ -186,7 +186,7 @@ void stepperCalibration()
   
   //Step 2: Point chin laser at the bottom left corner of the screen @ 65cm.
   moveStepper_relative(zdir,zpulse,8335,HIGH);
-  moveStepper_relative(ydir,ypulse,10188,HIGH); // Last input parameter: Steps from home position to 65cm.
+  moveStepper_relative(ydir,ypulse,(10188+100*StepsPerMM),HIGH); // Last input parameter: Steps from home position to 65cm.
 
 Usb.Task();
 
