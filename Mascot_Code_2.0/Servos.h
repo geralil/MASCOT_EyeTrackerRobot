@@ -50,7 +50,7 @@ int GetPos()
       
       if (Xbox.getAnalogHat(LeftHatX) > lim || Xbox.getAnalogHat(LeftHatX) < -lim) {
     
-        DotPos[xpos]+=(xStick/(32767));
+        DotPos[xpos]+=(xStick/(65534));
 
         if (DotPos[xpos] > positiveXLim)
         {
@@ -63,7 +63,7 @@ int GetPos()
       }
       if (Xbox.getAnalogHat(LeftHatY) > lim || Xbox.getAnalogHat(LeftHatY) < -lim) {
       
-        DotPos[zpos]+=(zStick/(32767));
+        DotPos[zpos]+=(zStick/(65534));
         
         if (DotPos[zpos] > positiveZLim)
         {
@@ -163,7 +163,7 @@ void parallax(){
 
   //totalAngleXR = atan(deltaX/deltaY) * (180/3.14159);
   //betaRight = -betaLeft - 16.5; //this is right
-  betaRight = -asin(deltaZ/rightLength) * (180/3.14159) - 15.13;
+  betaRight = -asin(deltaZ/rightLength) * (180/3.14159) - 16.13;
   alphaRight = atan(deltaX/deltaY)*(180/3.14159);
 
     //thetaXR = totalAngleXR + (rightXhome-right90xhome);

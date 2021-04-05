@@ -10,11 +10,6 @@
 float lookupRes=501;
 float Asin_Table[501]={0};
 float microsecondsPerDegree = 10.20408163;
-
-int eeAddress = 0;
-
-// Declaring the dictionary to store calibration variables
-Dictionary *calibration_variables = new Dictionary();
  
 
 // Initial values for screen dimensions
@@ -89,7 +84,7 @@ float DotPos[2]={0,0}; // Initialization of Dot Position Array with all values s
 
 /* These are the XY coordinates of the calibration points used by the Tobii Eye Tracker calibration
    routine. The calibrationCoords array will replace DotPos during the eye tracker calibration routine*/
-float calibrationCoords[2][7]={{2.34,2.34,-93.16,107.60,107.60,-95,-1.29},{-19.13,-110.51,56,45.32,-111.59,-111.59,49.49}};
+float calibrationCoords[2][7]={{-2.15,-2.15,-95.75,104.98,100.55,-94.44,-3.21},{-30.49,-120.13,45.19,41.77,-130.50,-128.32,41.10}};
 
 int threshold=3750; // Threshold for Xboc controller joystick inputs
 
@@ -132,8 +127,8 @@ int yEnd=27; // Y axis limit switch pin
 enum StateMachineState {
 MenuMode   = 0,          // Press Start on X-BOX Controller
 CAL    = 1,          // Press B on XBOX Controller
-SERCAL = 2,          // Press X on XBOX Controller
-AUTO   = 3,          // Press A on XBOX Controller
+SERCAL = 2,          // Press A on XBOX Controller
+AUTO   = 3,          // Press R3 on XBOX Controller
 HOM    = 4,          // Press Y on XBOX Controller
 STEPPERS = 5,        // Press RB on XBOX Controller
 COORDINATES = 6,     // Press RT on XBOX Controller
@@ -157,10 +152,10 @@ int lim=7500;
 // Include Accel Stepper Library and initialize stepper objects
 #include <AccelStepper.h>
 // Stepper Direction and Pulse Pins
-int xdir=19;
-int xpulse=18;
-int ydir=2;//was 11
-int ypulse=3;//was 8
+int xdir=35;
+int xpulse=33;
+int ydir=37;//was 11
+int ypulse=39;//was 8
 int zdir=11;// was 2
 int zpulse=8;//was 3
 
@@ -195,8 +190,8 @@ Servo ZservoR; // Right Z Servo (Looks up and down)
 #include "Steppers.h" // Contains all functions needed to manually control the stepepr axes.
 #include "Servos.h" // Contains all functions needed to manually control the servos.
 #include "calibration.h" // Contains all functions needed to calibrate the steppers and the servos to the rig.
-#include "James_functions.h" // Not currently in use. The idea was to use these files as "storage" for conceptual functions
-#include "Leif_functions.h"  // Not currently in use. The idea was to use these files as "storage" for conceptual functions
+//#include "James_functions.h" // Not currently in use. The idea was to use these files as "storage" for conceptual functions
+//#include "Leif_functions.h"  // Not currently in use. The idea was to use these files as "storage" for conceptual functions
 
 
 // The initial state after system startup
@@ -207,11 +202,11 @@ void runMenuModeState()
   {
     state=HOM; 
   }
-  if(Xbox.getButtonClick(X))
+  if(Xbox.getButtonClick(A))
   {
     state=SERCAL;
   }
-  if(Xbox.getButtonClick(A))
+  if(Xbox.getButtonClick(R3))
   {
     state=AUTO;
   }
@@ -237,47 +232,53 @@ void runMenuModeState()
   }
 }
 
-void LoadCalibrationVariablesToDict()
+void LoadCalibrationVariablesToProm()
 {
-//  calibration_variables -> insert("left90xmicro", String(left90xmicro));
-//  calibration_variables -> insert("left90zmicro", String(left90zmicro));
-//  calibration_variables -> insert("right90xmicro", String(right90xmicro));
-//  calibration_variables -> insert("right90zmicro", String(right90zmicro));
-//
-//  calibration_variables -> insert("leftScreen", String(leftScreen));
-//  calibration_variables -> insert("bottomScreen", String(bottomScreen));
-//  calibration_variables -> insert("topScreen", String(topScreen));
-//  calibration_variables -> insert("rightScreen", String(rightScreen));
-//  Serial.println("Variables Loaded");
-//  
-//  //EEPROM.put(eeAddress, calibration_variables);
-//  Serial.println("Variables Loaded!");
+  int eeAddress = 0;
 
   EEPROM.put(eeAddress, left90xmicro);
   eeAddress += sizeof(float);
   EEPROM.put(eeAddress, left90zmicro);
-  Serial.println("Variables stored!");
+  eeAddress += sizeof(float);
+  EEPROM.put(eeAddress, right90xmicro);
+  eeAddress += sizeof(float);
+  EEPROM.put(eeAddress, right90zmicro);
+  eeAddress += sizeof(float);
+
+  EEPROM.put(eeAddress, leftScreen);
+  eeAddress += sizeof(float);
+  EEPROM.put(eeAddress, rightScreen);
+  eeAddress += sizeof(float);
+  EEPROM.put(eeAddress, bottomScreen);
+  eeAddress += sizeof(float);
+  EEPROM.put(eeAddress, topScreen);
+  delay(100);
+
+  Serial.println("Variables loaded!");
 }
 
-void ReadCalibrationVariablesFromDict()
+void ReadCalibrationVariablesFromProm()
 {
-  calibration_variables = EEPROM.read(eeAddress);
+  int eeAddress = 0;
   
-  if (calibration_variables != 255)
-  {
-    left90xmicro = calibration_variables->search("left90xmicro").toInt();
-    left90zmicro = calibration_variables->search("left90zmicro").toInt();
-    right90xmicro = calibration_variables->search("right90xmicro").toInt();
-    right90zmicro = calibration_variables->search("right90zmicro").toInt();
+  EEPROM.get(eeAddress, left90xmicro);
+  eeAddress += sizeof(float);
+  EEPROM.get(eeAddress, left90zmicro);
+  eeAddress += sizeof(float);
+  EEPROM.get(eeAddress, right90xmicro);
+  eeAddress += sizeof(float);
+  EEPROM.get(eeAddress, right90zmicro);
+  eeAddress += sizeof(float);
   
-    leftScreen = calibration_variables->search("leftScreen").toInt();
-    rightScreen = calibration_variables->search("rightScreen").toInt();
-    bottomScreen = calibration_variables->search("bottomScreen").toInt();
-    topScreen = calibration_variables->search("topScreen").toInt();
-  }
-  Serial.println("Variables Loaded!");
-  Serial.println(left90xmicro);
-  Serial.println(leftScreen);
+  EEPROM.get(eeAddress, leftScreen);
+  eeAddress += sizeof(float);
+  EEPROM.get(eeAddress, rightScreen);
+  eeAddress += sizeof(float);
+  EEPROM.get(eeAddress, bottomScreen);
+  eeAddress += sizeof(float);
+  EEPROM.get(eeAddress, topScreen);
+
+  Serial.println("Variables read!");
 }
 
 
@@ -298,19 +299,14 @@ void ReadCalibrationVariablesFromDict()
 void runCalState()
 {
 stepperCalibration();
-//servoCalibration();
 
 state=MenuMode;
 }
 
 void runSerCalState()
 {
-//  XservoL.writeMicroseconds(1600);
-//  ZservoL.writeMicroseconds(1600);
-//  XservoR.writeMicroseconds(1600);
-//  ZservoR.writeMicroseconds(1600);
   servoCalibration();
-  LoadCalibrationVariablesToDict();
+  LoadCalibrationVariablesToProm();
 
   state = MenuMode;
 }
@@ -330,7 +326,7 @@ void runManualState()
   {
     state=CAL;
   }
-  if(Xbox.getButtonClick(A))
+  if(Xbox.getButtonClick(R3))
   {
     state=AUTO;
   }
@@ -350,7 +346,7 @@ void runManualState()
   {
     state=SET_COORDINATES;
   }  
-  if(Xbox.getButtonClick(X))
+  if(Xbox.getButtonClick(A))
   {
     state = SERCAL;
   }
@@ -368,7 +364,7 @@ void runAutoState()
   {
     state=CAL;
   }
-  if(Xbox.getButtonClick(X))
+  if(Xbox.getButtonClick(A))
   {
     state=SERCAL;
   }
@@ -410,8 +406,7 @@ void runHomeState()
 void runSteppersState()
 {
   i=0;
-//  moveStepper_relative(ydir, ypulse, 1000, LOW);
-//  state = MenuMode;
+
   while(i==0) // Keep the system in the stepper state
 {
   
@@ -432,7 +427,7 @@ void runSteppersState()
     state=CAL;
     i=1;
   }
-  if(Xbox.getButtonClick(X))
+  if(Xbox.getButtonClick(A))
   {
     state=SERCAL;
     i=1;

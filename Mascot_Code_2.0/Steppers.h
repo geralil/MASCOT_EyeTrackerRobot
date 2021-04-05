@@ -72,6 +72,6 @@ tempR += map(Xbox.getAnalogHat(RightHatX),-32767,32767,0,1023);
   Serial.print("AVG_Y: ");
   Serial.println(Analog_Y_AVG);
   Serial.print("AVG_R: ");
-  Serial.println(Analog_R_AVG);  
+  Serial.println(Analog_R_AVG);
   Serial.println("Calibration finished");  
 }

@@ -37,7 +37,7 @@ void setup() {
   delay(500);  
   
 InitialValues(); //averaging the values of the 3 analog pins (values from potmeters)
-ReadCalibrationVariablesFromDict();
+ReadCalibrationVariablesFromProm();
 
 // Initialize Limit Switch input pins
 pinMode(23,INPUT);
@@ -45,8 +45,8 @@ pinMode(25,INPUT);
 pinMode(27,INPUT);
 
 
-pinMode(21,OUTPUT);
-digitalWrite(21,LOW);
+pinMode(41,OUTPUT);
+digitalWrite(41,LOW);
   XservoL.attach(xLPin);
   ZservoL.attach(zLPin);
   XservoR.attach(xRPin);
