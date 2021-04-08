@@ -18,7 +18,9 @@ int GetPos()
   float negativeXLim = -130;
   float positiveZLim = 170;
   float negativeZLim = -170;
-  float rollAngle = 36;
+  float rollAngle = 0;
+
+  float transDotPos[2] = {0,0};
 
 //  Serial.print("StepperX: ");
 //  Serial.println(stepperX.currentPosition());
@@ -40,14 +42,16 @@ int GetPos()
 
   if (rollAngle != 0)
   {
-    positiveXLim = positiveXLim*cos(rollAngle) - positiveZLim*sin(rollAngle);
-    positiveZLim = positiveXLim*sin(rollAngle) - positiveZLim*cos(rollAngle);
+    float transPositiveXLim = positiveXLim*cos(rollAngle) + positiveZLim*sin(rollAngle);
+    float transPositiveZLim = -positiveXLim*sin(rollAngle) + positiveZLim*cos(rollAngle);
 
-    negativeXLim = negativeXLim*cos(rollAngle) - negativeZLim*sin(rollAngle);
-    negativeZLim = negativeXLim*sin(rollAngle) - negativeZLim*cos(rollAngle);
+    float transNegativeXLim = negativeXLim*cos(rollAngle) + negativeZLim*sin(rollAngle);
+    float transNegativeZLim = -negativeXLim*sin(rollAngle) + negativeZLim*cos(rollAngle);
 //
-//    DotPos[xpos] = DotPos[xpos]*cos(rollAngle) - DotPos[zpos]*sin(rollAngle);
-//    DotPos[zpos] = DotPos[xpos]*sin(rollAngle) - DotPos[zpos]*cos(rollAngle);
+    positiveXLim = transPositiveXLim;
+    positiveZLim = transPositiveZLim;
+    negativeXLim = transNegativeXLim;
+    negativeZLim = transNegativeZLim;
   }
 
 //  Serial.print("positiveXlim: ");
@@ -96,6 +100,19 @@ int GetPos()
       }
     }
   }
+
+//  if (rollAngle != 0)
+//  {
+//    transDotPos[xpos] = DotPos[xpos]*cos(rollAngle) - DotPos[zpos]*sin(rollAngle);
+//    transDotPos[zpos] = DotPos[xpos]*sin(rollAngle) + DotPos[zpos]*cos(rollAngle);
+//
+//    DotPos[xpos] = transDotPos[xpos];
+//    DotPos[zpos] = transDotPos[zpos];
+//  }
+//  Serial.print("Dotpos[xpos]: ");
+//  Serial.println(DotPos[xpos]);
+//  Serial.print("Dotpos[zpos]: ");
+//  Serial.println(DotPos[zpos]);
 }
 
 /*
@@ -177,7 +194,7 @@ void parallax(){
 
   //totalAngleXR = atan(deltaX/deltaY) * (180/3.14159);
   //betaRight = -betaLeft - 16.5; //this is right
-  betaRight = -asin(deltaZ/rightLength) * (180/3.14159) - 16.13;
+  betaRight = -asin(deltaZ/rightLength) * (180/3.14159);
   alphaRight = atan(deltaX/deltaY)*(180/3.14159);
 
     //thetaXR = totalAngleXR + (rightXhome-right90xhome);

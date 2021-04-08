@@ -46,7 +46,7 @@ float thetaXR = 0;
 //float rightXhome=91;
 //float rightZhome=90;
 
-float IPD=63; // This must change wth the Eye width
+float IPD=70; // This must change wth the Eye width
 float deltaY=600;
 float LxEye=0;
 float LzEye=0;
