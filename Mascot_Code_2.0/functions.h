@@ -34,6 +34,11 @@ float left90zmicro = 0;
 float right90xmicro = 0;
 float right90zmicro = 0;
 
+float offsetLx = 0;
+float offsetLz = 0;
+float offsetRx = 0;
+float offsetRz = 0;
+
 float totalAngleXL = 0;
 float totalAngleXR = 0;
 float thetaXL = 0;
@@ -46,7 +51,7 @@ float thetaXR = 0;
 //float rightXhome=91;
 //float rightZhome=90;
 
-float IPD=70; // This must change wth the Eye width
+float IPD=63; // This must change wth the Eye width
 float deltaY=600;
 float LxEye=0;
 float LzEye=0;
@@ -84,7 +89,7 @@ float DotPos[2]={0,0}; // Initialization of Dot Position Array with all values s
 
 /* These are the XY coordinates of the calibration points used by the Tobii Eye Tracker calibration
    routine. The calibrationCoords array will replace DotPos during the eye tracker calibration routine*/
-float calibrationCoords[2][7]={{-2.15,-2.15,-95.75,104.98,100.55,-94.44,-3.21},{-30.49,-120.13,45.19,41.77,-130.50,-128.32,41.10}};
+float calibrationCoords[2][4]={{-1.16,-1.25,-109.11,109.47},{-8.42,56.61,-69.77,-71.99}};
 
 int threshold=3750; // Threshold for Xboc controller joystick inputs
 

@@ -177,8 +177,8 @@ void parallax(){
 
   //totalAngleXL = atan(deltaX/deltaY) * (180/3.14159);
   //angle to the dot from home position
-  alphaLeft = atan(deltaX/deltaY)*(180/3.14159);
-  betaLeft = asin(deltaZ/leftLength)*(180/3.14159);
+  alphaLeft = asin(deltaX/leftLength)*(180/3.14159) - offsetLx;
+  betaLeft = asin(deltaZ/leftLength)*(180/3.14159) - offsetLz;
 
   // thetaXL = totalAngleXL - (leftXhome-left90xhome);
    //Serial.println(thetaXL);
@@ -194,8 +194,8 @@ void parallax(){
 
   //totalAngleXR = atan(deltaX/deltaY) * (180/3.14159);
   //betaRight = -betaLeft - 16.5; //this is right
-  betaRight = -asin(deltaZ/rightLength) * (180/3.14159);
-  alphaRight = atan(deltaX/deltaY)*(180/3.14159);
+  betaRight = -asin(deltaZ/rightLength) * (180/3.14159) - offsetRx;
+  alphaRight = asin(deltaX/rightLength)*(180/3.14159) - offsetRz;
 
     //thetaXR = totalAngleXR + (rightXhome-right90xhome);
     

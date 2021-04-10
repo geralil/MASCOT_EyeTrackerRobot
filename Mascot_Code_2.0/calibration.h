@@ -96,79 +96,86 @@ right90zmicro = XservoL.readMicroseconds();
     DotPos[0] = 0;
   DotPos[1] = 0;
 
-//  //Step 2: Point left eye and right eye at the chin laser  
-//    i=0;
-//    while(i==0) //Waits for B to be pressed on Xbox controller
-//    {
-//      Usb.Task();
-//      if(Xbox.getButtonClick(B))
-//      {
-//        i=1;
-//      }
-//      GetPos();
-//      leftEye();
-////      Serial.println("Xservo");
-////      Serial.println(XservoL.read());
-////      Serial.println("Zservo");
-////      Serial.println(ZservoL.read());
-//    }
-//
+  //Step 2: Point left eye and right eye at the chin laser  
+    i=0;
+    while(i==0) //Waits for B to be pressed on Xbox controller
+    {
+      Usb.Task();
+      if(Xbox.getButtonClick(B))
+      {
+        i=1;
+      }
+      GetPos();
+      leftEye();
+//      Serial.println("Xservo");
+//      Serial.println(XservoL.read());
+//      Serial.println("Zservo");
+//      Serial.println(ZservoL.read());
+    }
+
 //leftXhome = XservoL.read();  //servo x angle for left eye center
 //leftZhome = ZservoL.read();  //servo z angle for left eye center
-//  DotPos[0] = 0;
-//  DotPos[1] = 0;
-//
-//  Serial.println("Left Length ");
-//  Serial.println(leftLength);
-//  Serial.println("deltaX ");
-//  Serial.println(deltaX);
-//  Serial.println("Delta Y ");
-//  Serial.println(deltaY);
-//  Serial.println("Delta z");
-//  Serial.println(deltaZ);
-//  Serial.println("left X home");
-//  Serial.println(leftXhome);
-//  Serial.println("left z home");
-//  Serial.println(leftZhome);
-//  Serial.println(alphaLeft);
-//  Serial.println(betaLeft);
-//
-//delay(1000);
-//
-//    i=0;
-//    while(i==0) //Waits for B to be pressed on Xbox controller
-//    {
-//      Usb.Task();
-//      if(Xbox.getButtonClick(B))
-//      {
-//        i=1;
-//      }
-//      GetPos();
-//      rightEye();      
-////      Serial.println("Xservo");
-////      Serial.println(XservoR.read());
-////      Serial.println("Zservo");
-////      Serial.println(ZservoR.read());
-//    }
+
+  offsetLx = atan((0-DotPos[0])/deltaY);
+  offsetLz = atan((0-DotPos[1])/deltaY);
+  
+  DotPos[0] = 0;
+  DotPos[1] = 0;
+
+  Serial.println("Left Length ");
+  Serial.println(leftLength);
+  Serial.println("deltaX ");
+  Serial.println(deltaX);
+  Serial.println("Delta Y ");
+  Serial.println(deltaY);
+  Serial.println("Delta z");
+  Serial.println(deltaZ);
+  Serial.println("left X home");
+  Serial.println(leftXhome);
+  Serial.println("left z home");
+  Serial.println(leftZhome);
+  Serial.println(alphaLeft);
+  Serial.println(betaLeft);
+
+delay(1000);
+
+    i=0;
+    while(i==0) //Waits for B to be pressed on Xbox controller
+    {
+      Usb.Task();
+      if(Xbox.getButtonClick(B))
+      {
+        i=1;
+      }
+      GetPos();
+      rightEye();      
+//      Serial.println("Xservo");
+//      Serial.println(XservoR.read());
+//      Serial.println("Zservo");
+//      Serial.println(ZservoR.read());
+    }
 //rightXhome = XservoR.read();  //servo x angle for right eye center
 //rightZhome = ZservoR.read();  //servo z angle for right eye center 
-//
-//  Serial.println("Right Length ");
-//  Serial.println(rightLength);
-//  Serial.println("deltaX ");
-//  Serial.println(deltaX);
-//  Serial.println("Delta Y ");
-//  Serial.println(deltaY);
-//  Serial.println("Delta z");
-//  Serial.println(deltaZ);
-//  Serial.println("right X home");
-//  Serial.println(rightXhome);
-//  Serial.println("right z home");
-//  Serial.println(rightZhome);
-//  Serial.println(alphaRight);
-//  Serial.println(betaRight);
-//    DotPos[0] = 0;
-//  DotPos[1] = 0;
+
+  offsetRx = atan((0-DotPos[0])/deltaY);
+  offsetRz = atan((0-DotPos[1])/deltaY);
+
+  Serial.println("Right Length ");
+  Serial.println(rightLength);
+  Serial.println("deltaX ");
+  Serial.println(deltaX);
+  Serial.println("Delta Y ");
+  Serial.println(deltaY);
+  Serial.println("Delta z");
+  Serial.println(deltaZ);
+  Serial.println("right X home");
+  Serial.println(rightXhome);
+  Serial.println("right z home");
+  Serial.println(rightZhome);
+  Serial.println(alphaRight);
+  Serial.println(betaRight);
+    DotPos[0] = 0;
+  DotPos[1] = 0;
   
   DotPos[xpos]=screenWidth/2;
   DotPos[zpos]=screenHeight/2;
@@ -186,7 +193,7 @@ void stepperCalibration()
   
   //Step 2: Point chin laser at the bottom left corner of the screen @ 65cm.
   moveStepper_relative(zdir,zpulse,8335,HIGH);
-  moveStepper_relative(ydir,ypulse,(10188),HIGH); // Last input parameter: Steps from home position to 65cm.
+  moveStepper_relative(ydir,ypulse,(10188+4*StepsPerMM),HIGH); // Last input parameter: Steps from home position to 65cm.
 
 Usb.Task();
 
@@ -288,7 +295,7 @@ i=0;
 
 void setPos() // This function will steer the gaze of the artificial eyes at the calibration points during the Tobii Calibration.
 {
-  for(int j=0;j<7;j++)
+  for(int j=0;j<4;j++)
   {
     DotPos[0]=calibrationCoords[0][j]; // X Coordinate
     DotPos[1]=calibrationCoords[1][j]; // Z Coordinate
