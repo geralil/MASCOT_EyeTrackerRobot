@@ -21,6 +21,11 @@ void setup() {
   ZservoL.attach(zLPin);
   XservoR.attach(xRPin);
   ZservoR.attach(zRPin);
+
+  XservoL.writeMicroseconds(1500);
+  ZservoL.writeMicroseconds(1500);
+  XservoR.writeMicroseconds(1500);
+  ZservoR.writeMicroseconds(1500);
   
   // Set operating parameters for stepper motors
   stepperY.setMaxSpeed(10000); //SPEED = Steps / second

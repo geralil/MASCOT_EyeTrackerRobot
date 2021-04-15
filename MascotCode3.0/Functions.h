@@ -129,7 +129,7 @@ BLA::Matrix<4,4> xform(int x, int y, int z){
  * (when steppers hit the limit switches 
  * + offsets to the center of the stage) to the origin of the screen S.
  */
-BLA::Matrix<4,4> gBS = xform(127.5,635,241.15);
+BLA::Matrix<4,4> gBS = xform(140.15,635,220.46);
 //BLA::Matrix<4,4> gBS = {1,0,0,127.5,
 //                        0,1,0,635,
 //                        0,0,1,241.15,
@@ -250,6 +250,7 @@ bool IfButtonPressed()
     state = ServoManual;
     pressed = true;
   }
+  return pressed;
 }
 
 /*
@@ -278,7 +279,8 @@ void runServoCalibrationState()
  */
  void runServoManualState()
  {
-  IfButtonPressed();
+    GetScreenDotPosition();
+    parallax();
  }
 
  /*
