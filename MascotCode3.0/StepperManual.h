@@ -16,7 +16,7 @@ void ReadAnalog()
 	//This is a sort of a filter for the inaccuracy of the reading
 	if (abs(Analog_X - Analog_X_AVG) > Lim && abs(stepperX.currentPosition()) < 30000)
 	{
-		stepperX.move(5 * ((Analog_X)-Analog_X_AVG));
+		stepperX.move(((Analog_X)-Analog_X_AVG));
 	}
 	else
 	{
@@ -25,7 +25,7 @@ void ReadAnalog()
 	//----------------------------------------------------------------------------  
 	if (abs(Analog_Y - Analog_Y_AVG) > Lim)
 	{
-		stepperY.move(5 * (Analog_Y - Analog_Y_AVG));
+		stepperY.move((Analog_Y - Analog_Y_AVG));
 	}
 	else
 	{
@@ -34,7 +34,7 @@ void ReadAnalog()
 	//---------------------------------------------------------------------------
 	if (abs(Analog_Z - Analog_R_AVG) > Lim)
 	{
-		stepperZ.move(5 * (Analog_Z - Analog_R_AVG));
+		stepperZ.move((Analog_Z - Analog_R_AVG));
 	}
 	else
 	{
