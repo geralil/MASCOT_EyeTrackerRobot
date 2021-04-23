@@ -12,31 +12,25 @@ void GetScreenDotPosition()
       xStick = Xbox.getAnalogHat(LeftHatX);
       zStick = Xbox.getAnalogHat(LeftHatY);
 
-      if (Xbox.getAnalogHat(LeftHatX) > lim || Xbox.getAnalogHat(LeftHatX) < -lim) {
+      if (calPointDotPos == 0)
+      {
+        if (Xbox.getAnalogHat(LeftHatX) > lim || Xbox.getAnalogHat(LeftHatX) < -lim) {
 
-        screenDotPos(0) += (xStick / (32767));
-      }
-      if (Xbox.getAnalogHat(LeftHatY) > lim || Xbox.getAnalogHat(LeftHatY) < -lim) {
+          screenDotPos(0) += (xStick / (32767));
+        }
+        if (Xbox.getAnalogHat(LeftHatY) > lim || Xbox.getAnalogHat(LeftHatY) < -lim) {
 
-        screenDotPos(2) += (zStick / (32767));
-      }
-      if (Xbox.getAnalogHat(RightHatX) > lim || Xbox.getAnalogHat(RightHatX) < -lim) {
+          screenDotPos(2) += (zStick / (32767));
+        }
+        if (Xbox.getAnalogHat(RightHatX) > lim || Xbox.getAnalogHat(RightHatX) < -lim) {
 
-      }
-      if (Xbox.getAnalogHat(RightHatY) > lim || Xbox.getAnalogHat(RightHatY) < -lim) {
+        }
+        if (Xbox.getAnalogHat(RightHatY) > lim || Xbox.getAnalogHat(RightHatY) < -lim) {
 
+        }
       }
     }
   }
-
-
-  gBC = xform(-stepperX.currentPosition() / StepsPerMM,
-              -stepperY.currentPosition() / StepsPerMM,
-              stepperZ.currentPosition() / StepsPerMM);
-
-  gLS = gLD.Inverse() * gCD.Inverse() * gBC.Inverse() * gBS;
-
-  gRS = gRD.Inverse() * gCD.Inverse() * gBC.Inverse() * gBS;
 
   leftDotPos = gLS * screenDotPos;
   rightDotPos = gRS * screenDotPos;
@@ -56,27 +50,86 @@ void parallax() {
   alphaLeft = atan2(leftDotPos(1), leftDotPos(0)) * (180 / 3.14159);
   betaLeft = -atan2(leftDotPos(2), sqrt((leftDotPos(0) * leftDotPos(0)) + (leftDotPos(1) * leftDotPos(1)))) * (180 / 3.14159);
 
-//  Serial << leftDotPos;
-//  Serial.println();
-//  Serial << rightDotPos;
-//  Serial.println();
-
   // calculating angles of rotation for the right eye
   alphaRight  = atan2(rightDotPos(1), rightDotPos(0)) * (180 / 3.14159);
   betaRight = atan2(rightDotPos(2), sqrt((rightDotPos(0) * rightDotPos(0)) + (rightDotPos(1) * rightDotPos(1)))) * (180 / 3.14159);
 
-  Serial.print("alphaLeft");
-  Serial.println(alphaLeft);
-  Serial.print("betaLeft");
-  Serial.println(betaLeft);
-  Serial.print("alphaRight");
-  Serial.println(alphaRight);
-  Serial.print("betaRight");
-  Serial.println(betaRight);
+  Serial << leftDotPos;
+  Serial.println("\n");
 
   // writing the angle values to the X and Z servos.
-  XservoL.writeMicroseconds(1500 + (90 - alphaLeft) * microsecondsPerDegree);
-  ZservoL.writeMicroseconds(1500 + (betaLeft) * microsecondsPerDegree);
-  XservoR.writeMicroseconds(1500 + (90 - alphaRight) * microsecondsPerDegree);
-  ZservoR.writeMicroseconds(1500 + (betaRight) * microsecondsPerDegree);
+  XservoL.writeMicroseconds(centerLeftXMicroseconds + (90 - alphaLeft) * leftXMicrosceondsPerDegree);
+  //delay(5);
+  ZservoL.writeMicroseconds(centerLeftZMicroseconds + (betaLeft) * leftMicrosecondsPerDegree);
+  //delay(10);
+  XservoR.writeMicroseconds(centerRightXMicroseconds + (90 - alphaRight) * microsecondsPerDegree);
+  //delay(10);
+  ZservoR.writeMicroseconds(centerRightZMicroseconds + (betaRight) * microsecondsPerDegree);
+  //delay(5);
+}
+
+void servoCalibration()
+{
+  screenDotPos(0) = 0;
+  screenDotPos(2) = 0;
+
+  leftDotPos = gLS * screenDotPos;
+  rightDotPos = gRS * screenDotPos;
+
+  if (Xbox.getButtonClick(RIGHT))
+  {
+    calMotor = 4;
+  }
+  if (Xbox.getButtonClick(LEFT))
+  {
+    calMotor = 3;
+  }
+  if (Xbox.getButtonClick(UP))
+  {
+    calMotor = 2;
+  }
+  if (Xbox.getButtonClick(DOWN))
+  {
+    calMotor = 1;
+  }
+
+  int lim = 7500;
+ 
+  if (Xbox.XboxOneConnected) {
+    if (Xbox.getAnalogHat(LeftHatX) > lim || Xbox.getAnalogHat(LeftHatX) < -lim || Xbox.getAnalogHat(LeftHatY) > lim || Xbox.getAnalogHat(LeftHatY) < -lim || Xbox.getAnalogHat(RightHatX) > lim || Xbox.getAnalogHat(RightHatX) < -lim || Xbox.getAnalogHat(RightHatY) > lim || Xbox.getAnalogHat(RightHatY) < -lim) {
+
+      xStick = Xbox.getAnalogHat(LeftHatX);
+      zStick = Xbox.getAnalogHat(LeftHatY);
+
+      if (Xbox.getAnalogHat(LeftHatX) > lim || Xbox.getAnalogHat(LeftHatX) < -lim) {
+        switch (calMotor)
+        {
+          case (4) :{ centerRightXMicroseconds += ((xStick) / 32767);
+            break;
+          }
+          case (3) :{ centerLeftXMicroseconds += ((xStick) / 32767);
+            break;
+          }
+          default : {
+            break;
+          }
+        }
+
+      }
+      if (Xbox.getAnalogHat(LeftHatY) > lim || Xbox.getAnalogHat(LeftHatY) < -lim) {
+        switch (calMotor)
+        {
+          case (1) :{ centerRightZMicroseconds += ((zStick) / 32767);
+            break;
+          }
+          case (2) :{ centerLeftZMicroseconds += ((zStick) / 32767);
+            break;
+          }
+          default : {
+            break;
+          }
+        }
+      }      
+    }
+  }
 }

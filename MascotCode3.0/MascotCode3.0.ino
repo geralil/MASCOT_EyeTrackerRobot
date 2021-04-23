@@ -1,5 +1,7 @@
 #include "Functions.h"
 
+ 
+
 void setup() {
   // Set up Connection to Xbox controller
   Serial.begin(115200);
@@ -9,6 +11,8 @@ void setup() {
     while (1); //halt
   }
   Serial.print(F("\r\nXBOX USB Library Started"));
+
+ 
 
   // Initialize Limit Switch input pins
   pinMode(xEnd, INPUT); // x
@@ -22,10 +26,12 @@ void setup() {
   XservoR.attach(xRPin);
   ZservoR.attach(zRPin);
 
-  XservoL.writeMicroseconds(1500);
-  ZservoL.writeMicroseconds(1500);
-  XservoR.writeMicroseconds(1500);
-  ZservoR.writeMicroseconds(1500);
+ 
+
+  XservoL.writeMicroseconds(centerLeftXMicroseconds);    // -ve left; +ve right
+  ZservoL.writeMicroseconds(centerLeftZMicroseconds);    // -ve up; +ve down
+  XservoR.writeMicroseconds(centerRightXMicroseconds);    // -ve left; +ve right
+  ZservoR.writeMicroseconds(centerRightZMicroseconds);    // -ve down; +ve up
   
   // Set operating parameters for stepper motors
   stepperY.setMaxSpeed(10000); //SPEED = Steps / second
@@ -39,10 +45,127 @@ void setup() {
   delay(500);
   
   InitialValues(); //averaging the values of the 3 analog pins (values from potmeters)
+  ReadCalibrationVariablesFromProm();
 }
+
+ 
+
+int whichMotor = 0;
+
+ 
 
 void loop() {
   Usb.Task();
+//
+//  if (Serial.available())
+//  {
+//    char c = Serial.read();
+//    if( c=='a')
+//      whichMotor++;
+//    else if (c == 'z')
+//      whichMotor--;
+//    else if (c == 's')
+//    {
+//      if (whichMotor == 0)
+//      {
+//        centerLeftXMicroseconds += 5;
+//      }
+//      else if (whichMotor == 1)
+//      {
+//        centerLeftZMicroseconds += 5;
+//      }
+//      else if (whichMotor == 2)
+//      {
+//        centerRightXMicroseconds += 5;
+//      }
+//      else if (whichMotor == 3)
+//      {
+//        centerRightZMicroseconds += 5;
+//      }
+//    }
+//    else if (c == 'x')
+//    {
+//      if (whichMotor == 0)
+//      {
+//        centerLeftXMicroseconds -= 5;
+//      }
+//      else if (whichMotor == 1)
+//      {
+//        centerLeftZMicroseconds -= 5;
+//      }
+//      else if (whichMotor == 2)
+//      {
+//        centerRightXMicroseconds -= 5;
+//      }
+//      else if (whichMotor == 3)
+//      {
+//        centerRightZMicroseconds -= 5;
+//      }
+//    }
+//    else if (c == 'd')
+//    {
+//      if (whichMotor == 0)
+//      {
+//        centerLeftXMicroseconds += 1;
+//      }
+//      else if (whichMotor == 1)
+//      {
+//        centerLeftZMicroseconds += 1;
+//      }
+//      else if (whichMotor == 2)
+//      {
+//        centerRightXMicroseconds += 1;
+//      }
+//      else if (whichMotor == 3)
+//      {
+//        centerRightZMicroseconds += 1;
+//      }
+//    }
+//    else if (c == 'c')
+//    {
+//      if (whichMotor == 0)
+//      {
+//        centerLeftXMicroseconds -= 1;
+//      }
+//      else if (whichMotor == 1)
+//      {
+//        centerLeftZMicroseconds -= 1;
+//      }
+//      else if (whichMotor == 2)
+//      {
+//        centerRightXMicroseconds -= 1;
+//      }
+//      else if (whichMotor == 3)
+//      {
+//        centerRightZMicroseconds -= 1;
+//      }
+//    }
+//    else if( c == 'y')
+//    {
+//      calPointDotPos = !calPointDotPos;
+//    }
+//    else if( c == 'u')
+//    {
+//      screenDotPos = calPoint0;
+//    }
+//    else if( c == 'i')
+//    {
+//      screenDotPos = calPoint1;
+//    }
+//    else if( c == 'o')
+//    {
+//      screenDotPos = calPoint2;
+//    }
+//    else if( c == 'p')
+//    {
+//      screenDotPos = calPoint3;
+//    }
+//    else if( c == 'w')
+//    {
+//      WriteCalibrationVariablesToProm();
+//    }
+//    
+//  }
   
   switch (state)
   {
@@ -73,7 +196,7 @@ void loop() {
       }
     case (SetCoordinates):
       {
-        //runSetCoordinatesState();
+        runSetCoordinatesState();
         break;
       }
     case (FindCoordinates):
