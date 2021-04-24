@@ -201,7 +201,7 @@ void loop() {
       }
     case (FindCoordinates):
       {
-        //findCoordinatesState();
+        runFindCoordinatesState();
         break;
       }
     case (Auto):

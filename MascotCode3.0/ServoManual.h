@@ -53,20 +53,24 @@ void parallax() {
   // calculating angles of rotation for the right eye
   alphaRight  = atan2(rightDotPos(1), rightDotPos(0)) * (180 / 3.14159);
   betaRight = atan2(rightDotPos(2), sqrt((rightDotPos(0) * rightDotPos(0)) + (rightDotPos(1) * rightDotPos(1)))) * (180 / 3.14159);
-
-  Serial << leftDotPos;
-  Serial.println("\n");
-
-  // writing the angle values to the X and Z servos.
-  XservoL.writeMicroseconds(centerLeftXMicroseconds + (90 - alphaLeft) * leftXMicrosceondsPerDegree);
-  //delay(5);
-  ZservoL.writeMicroseconds(centerLeftZMicroseconds + (betaLeft) * leftMicrosecondsPerDegree);
-  //delay(10);
-  XservoR.writeMicroseconds(centerRightXMicroseconds + (90 - alphaRight) * microsecondsPerDegree);
-  //delay(10);
-  ZservoR.writeMicroseconds(centerRightZMicroseconds + (betaRight) * microsecondsPerDegree);
-  //delay(5);
+  
+  if ((alphaLeft != alphaLeftPrev) || (betaLeft != betaLeftPrev) || (state == ServoCalibration))
+  {
+    // writing the angle values to the X and Z servos.
+    XservoL.writeMicroseconds(centerLeftXMicroseconds + (90 - alphaLeft) * leftXMicrosceondsPerDegree);
+    //delay(50);
+    ZservoL.writeMicroseconds(centerLeftZMicroseconds + (betaLeft) * leftMicrosecondsPerDegree);
+    //delay(50);
+    XservoR.writeMicroseconds(centerRightXMicroseconds + (90 - alphaRight) * microsecondsPerDegree);
+    //delay(50);
+    ZservoR.writeMicroseconds(centerRightZMicroseconds + (betaRight) * microsecondsPerDegree);
+    //delay(50);
+  
+    alphaLeftPrev = alphaLeft;
+    betaLeftPrev = betaLeft;
+  }
 }
+
 
 void servoCalibration()
 {

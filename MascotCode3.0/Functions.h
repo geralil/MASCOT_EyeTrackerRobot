@@ -45,7 +45,7 @@ int Analog_R_AVG = 0; //r-axis value average
 */
 
 // Declare Servo Pins - check wiring diagram if you have any questions
-int xLPin = 1;
+int xLPin = 4;
 int zLPin = 5;
 int xRPin = 6;
 int zRPin = 7;
@@ -273,6 +273,7 @@ BLA::Matrix<4> screenDotPos = {0, 0, 0, 1};
 BLA::Matrix<4> leftDotPos = gLS * screenDotPos;
 BLA::Matrix<4> rightDotPos = gRS * screenDotPos;
 
+
 /*
    Declaring rotation angles for the left and right servos.
    These rotation angles will be used in the parallax function to rotate the servos
@@ -282,6 +283,9 @@ float alphaLeft = 0;    // alpha is the rotation in the X axis.
 float alphaRight = 0;
 float betaLeft = 0;     // beta is the rotation in the Z axis.
 float betaRight = 0;
+
+float alphaLeftPrev = 0;
+float betaLeftPrev = 0;
 
 #include "StepperHome.h"
 #include "ServoManual.h"
@@ -492,11 +496,15 @@ void runSetCoordinatesState()
   int i = 0;
   while (i < 4)
   {
-    screenDotPos = calPoints(i);
+    for (int j = 0; j < 3; j++)
+    {
+      screenDotPos(j) = calPoints(i,j);
+    }
     leftDotPos = gLS * screenDotPos;
     rightDotPos = gRS * screenDotPos;
     parallax();
 
+    Usb.Task();
     if (Xbox.getButtonClick(B))
     {
       i++;
@@ -518,6 +526,7 @@ void runFindCoordinatesState()
   GetScreenDotPosition();
   parallax();
 
+  Usb.Task();
   if (Xbox.getButtonClick(B))
   {
     Serial << screenDotPos;
