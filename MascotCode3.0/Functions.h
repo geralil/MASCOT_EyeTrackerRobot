@@ -9,8 +9,15 @@
 #include <spi4teensy3.h>
 #endif
 #include <SPI.h>
+
+// Include this library for matrix manipulation
 #include <BasicLinearAlgebra.h>
+// Library for writing and retreiving information using EEPROM
 #include <EEPROM.h>
+
+// Library for Nextion screen and GUI implementation
+#include <SoftwareSerial.h>
+#include <Nextion.h>
 
 // Create State Machine
 enum StateMachineState {
@@ -24,6 +31,9 @@ enum StateMachineState {
   ServoManual = 7,      // Press LB on XBOX Controller
 };
 StateMachineState state = MenuMode;
+
+//Setup Serial port for screen (TX,RX) 
+SoftwareSerial mySerial(36, 37);
 
 // Initialize XBOX and USB Objects
 USB Usb;
@@ -264,10 +274,6 @@ BLA::Matrix<4, 4> calPoints = {0, 0, 0, 1,
                                104.57, 0, -68.79, 1,
                                0, 0, 69.66, 1,
                                -104.57, 0, -68.79, 1};
-                               
-//BLA::Matrix<4> calPoint1 = {104.57,  0,  -68.79,  1};
-//BLA::Matrix<4> calPoint2 = {     0,  0,   69.66,  1};
-//BLA::Matrix<4> calPoint3 = {-104.57, 0,  -68.79,  1};
 
 BLA::Matrix<4> screenDotPos = {0, 0, 0, 1};
 BLA::Matrix<4> leftDotPos = gLS * screenDotPos;
@@ -290,13 +296,14 @@ float betaLeftPrev = 0;
 #include "StepperHome.h"
 #include "ServoManual.h"
 #include "StepperManual.h"
+#include "GUI.h"
 
 /*
  * Function to update the transformation matrices
  */
 void UpdateTransformation()
 {
-  // Recalculating gBS and gDS
+  // Recalculating gBC and gLS, gRS
   gBC = xform(0,0,0,-stepperX.currentPosition() / StepsPerMM,
                               -stepperY.currentPosition() / StepsPerMM,
                               stepperZ.currentPosition() / StepsPerMM);

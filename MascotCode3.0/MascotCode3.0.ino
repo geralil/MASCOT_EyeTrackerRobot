@@ -12,7 +12,7 @@ void setup() {
   }
   Serial.print(F("\r\nXBOX USB Library Started"));
 
- 
+  mySerial.begin(9600);
 
   // Initialize Limit Switch input pins
   pinMode(xEnd, INPUT); // x
@@ -56,116 +56,6 @@ int whichMotor = 0;
 
 void loop() {
   Usb.Task();
-//
-//  if (Serial.available())
-//  {
-//    char c = Serial.read();
-//    if( c=='a')
-//      whichMotor++;
-//    else if (c == 'z')
-//      whichMotor--;
-//    else if (c == 's')
-//    {
-//      if (whichMotor == 0)
-//      {
-//        centerLeftXMicroseconds += 5;
-//      }
-//      else if (whichMotor == 1)
-//      {
-//        centerLeftZMicroseconds += 5;
-//      }
-//      else if (whichMotor == 2)
-//      {
-//        centerRightXMicroseconds += 5;
-//      }
-//      else if (whichMotor == 3)
-//      {
-//        centerRightZMicroseconds += 5;
-//      }
-//    }
-//    else if (c == 'x')
-//    {
-//      if (whichMotor == 0)
-//      {
-//        centerLeftXMicroseconds -= 5;
-//      }
-//      else if (whichMotor == 1)
-//      {
-//        centerLeftZMicroseconds -= 5;
-//      }
-//      else if (whichMotor == 2)
-//      {
-//        centerRightXMicroseconds -= 5;
-//      }
-//      else if (whichMotor == 3)
-//      {
-//        centerRightZMicroseconds -= 5;
-//      }
-//    }
-//    else if (c == 'd')
-//    {
-//      if (whichMotor == 0)
-//      {
-//        centerLeftXMicroseconds += 1;
-//      }
-//      else if (whichMotor == 1)
-//      {
-//        centerLeftZMicroseconds += 1;
-//      }
-//      else if (whichMotor == 2)
-//      {
-//        centerRightXMicroseconds += 1;
-//      }
-//      else if (whichMotor == 3)
-//      {
-//        centerRightZMicroseconds += 1;
-//      }
-//    }
-//    else if (c == 'c')
-//    {
-//      if (whichMotor == 0)
-//      {
-//        centerLeftXMicroseconds -= 1;
-//      }
-//      else if (whichMotor == 1)
-//      {
-//        centerLeftZMicroseconds -= 1;
-//      }
-//      else if (whichMotor == 2)
-//      {
-//        centerRightXMicroseconds -= 1;
-//      }
-//      else if (whichMotor == 3)
-//      {
-//        centerRightZMicroseconds -= 1;
-//      }
-//    }
-//    else if( c == 'y')
-//    {
-//      calPointDotPos = !calPointDotPos;
-//    }
-//    else if( c == 'u')
-//    {
-//      screenDotPos = calPoint0;
-//    }
-//    else if( c == 'i')
-//    {
-//      screenDotPos = calPoint1;
-//    }
-//    else if( c == 'o')
-//    {
-//      screenDotPos = calPoint2;
-//    }
-//    else if( c == 'p')
-//    {
-//      screenDotPos = calPoint3;
-//    }
-//    else if( c == 'w')
-//    {
-//      WriteCalibrationVariablesToProm();
-//    }
-//    
-//  }
   
   switch (state)
   {
