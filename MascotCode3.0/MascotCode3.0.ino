@@ -3,8 +3,19 @@
  
 
 void setup() {
-  // Set up Connection to Xbox controller
+  // Set up Connection to Xbox controller and BNO IMU
   Serial.begin(115200);
+  while (!Serial) {
+    ;
+  }
+  Serial.println("Serial On");
+  if(!bno.begin())
+  {
+   Serial.print("Ooops, no BNO055 detected ... Check your wiring or I2C ADDR!");
+  }
+  
+  bno.setExtCrystalUse(true);   // prepping the IMU
+  
   while (!Serial); // Wait for serial port to connect - used on Leonardo, Teensy and other boards with built-in USB CDC serial connection
   if (Usb.Init() == -1) {
     Serial.print(F("\r\nOSC did not start"));
@@ -12,7 +23,7 @@ void setup() {
   }
   Serial.print(F("\r\nXBOX USB Library Started"));
 
-  mySerial.begin(9600);
+  
 
   // Initialize Limit Switch input pins
   pinMode(xEnd, INPUT); // x
@@ -21,12 +32,39 @@ void setup() {
   
   pinMode(41, OUTPUT); 
   digitalWrite(41, LOW); //Servo enable using relay - using that to prevent jitter when arduino starts
+  
+  // attaching servos to their respective pins.//
   XservoL.attach(xLPin);
   ZservoL.attach(zLPin);
   XservoR.attach(xRPin);
   ZservoR.attach(zRPin);
+  NeckServo.attach(NSPin);
 
- 
+  // Loading calibration variables for neck stepper from EEprom
+  ReadCalibrationStepperPosFromProm();
+  ReadLastStepperPosFromProm();
+
+  /* 
+   * Set operating parameters for neck stepper motors 
+   * stepper one is front
+   * stepper two is back right
+   * stepper three is back left
+   */
+  stepperOne.setCurrentPosition(knownstepperposOne); //laststepperposOne); //knownstepperposOne);
+  stepperOne.setMaxSpeed(3000); //SPEED = Steps / second 
+  stepperOne.setAcceleration(3000); //ACCELERATION = Steps /(second)^2    
+  delay(500);
+  stepperTwo.setCurrentPosition(knownstepperposTwo); //laststepperposTwo); //knownstepperposTwo);
+  stepperTwo.setMaxSpeed(3000); //SPEED = Steps / second 
+  stepperTwo.setAcceleration(3000); //ACCELERATION = Steps /(second)^2
+  delay(500); 
+  stepperThree.setCurrentPosition(knownstepperposThree); //laststepperposThree); //knownstepperposThree); 
+  stepperThree.setMaxSpeed(3000); //SPEED = Steps / second 
+  stepperThree.setAcceleration(3000); //ACCELERATION = Steps /(second)^2      
+  delay(500);
+
+  // Loading calibration variables for eye servos and shoulder steppers from Prom
+  ReadCalibrationVariablesFromProm();
 
   XservoL.writeMicroseconds(centerLeftXMicroseconds);    // -ve left; +ve right
   ZservoL.writeMicroseconds(centerLeftZMicroseconds);    // -ve up; +ve down
@@ -45,7 +83,6 @@ void setup() {
   delay(500);
   
   InitialValues(); //averaging the values of the 3 analog pins (values from potmeters)
-  ReadCalibrationVariablesFromProm();
 }
 
  
@@ -96,11 +133,26 @@ void loop() {
       }
     case (Auto):
       {
-        //runAutoState();
+        runAutoState();
+        break;
+      }
+    case (NeckCalibration):
+      {
+        runNeckCalibrationState();
+        break;
+      }
+    case (MoveToCalibrationState):
+      {
+        runMoveToCalibrationState();
+        break;
+      }
+    case (Neck):
+      {
+        runNeckState();
         break;
       }
   }
-  if (state != ServoManual)
+  if (state != ServoManual || state != NeckCalibration)
   {
     delay(1);
   }

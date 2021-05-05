@@ -53,7 +53,7 @@ void parallax() {
   // calculating angles of rotation for the right eye
   alphaRight  = atan2(rightDotPos(1), rightDotPos(0)) * (180 / 3.14159);
   betaRight = atan2(rightDotPos(2), sqrt((rightDotPos(0) * rightDotPos(0)) + (rightDotPos(1) * rightDotPos(1)))) * (180 / 3.14159);
-  
+
   if ((alphaLeft != alphaLeftPrev) || (betaLeft != betaLeftPrev) || (state == ServoCalibration))
   {
     // writing the angle values to the X and Z servos.
@@ -64,14 +64,18 @@ void parallax() {
     XservoR.writeMicroseconds(centerRightXMicroseconds + (90 - alphaRight) * microsecondsPerDegree);
     //delay(50);
     ZservoR.writeMicroseconds(centerRightZMicroseconds + (betaRight) * microsecondsPerDegree);
-    //delay(50);
-  
+    delay(10);
+
     alphaLeftPrev = alphaLeft;
     betaLeftPrev = betaLeft;
   }
 }
 
-
+/*
+ * This is the function that gets called to calibrate the eye servos. 
+ * The function uses the D-pad on the XBOX. Left and right buttons increment and decrement the motor selection.
+ * The UP and DOWN buttons move the servo that is currently being calibrated.
+ */
 void servoCalibration()
 {
   screenDotPos(0) = 0;
@@ -82,58 +86,57 @@ void servoCalibration()
 
   if (Xbox.getButtonClick(RIGHT))
   {
-    calMotor = 4;
+    calMotor ++;
   }
   if (Xbox.getButtonClick(LEFT))
   {
-    calMotor = 3;
+    calMotor --;
   }
-  if (Xbox.getButtonClick(UP))
+
+  switch (calMotor)
   {
-    calMotor = 2;
-  }
-  if (Xbox.getButtonClick(DOWN))
-  {
-    calMotor = 1;
-  }
-
-  int lim = 7500;
- 
-  if (Xbox.XboxOneConnected) {
-    if (Xbox.getAnalogHat(LeftHatX) > lim || Xbox.getAnalogHat(LeftHatX) < -lim || Xbox.getAnalogHat(LeftHatY) > lim || Xbox.getAnalogHat(LeftHatY) < -lim || Xbox.getAnalogHat(RightHatX) > lim || Xbox.getAnalogHat(RightHatX) < -lim || Xbox.getAnalogHat(RightHatY) > lim || Xbox.getAnalogHat(RightHatY) < -lim) {
-
-      xStick = Xbox.getAnalogHat(LeftHatX);
-      zStick = Xbox.getAnalogHat(LeftHatY);
-
-      if (Xbox.getAnalogHat(LeftHatX) > lim || Xbox.getAnalogHat(LeftHatX) < -lim) {
-        switch (calMotor)
-        {
-          case (4) :{ centerRightXMicroseconds += ((xStick) / 32767);
-            break;
-          }
-          case (3) :{ centerLeftXMicroseconds += ((xStick) / 32767);
-            break;
-          }
-          default : {
-            break;
-          }
-        }
-
+      case (1) : {
+      if (Xbox.getButtonClick(UP)) {
+        centerRightZMicroseconds += 5;
       }
-      if (Xbox.getAnalogHat(LeftHatY) > lim || Xbox.getAnalogHat(LeftHatY) < -lim) {
-        switch (calMotor)
-        {
-          case (1) :{ centerRightZMicroseconds += ((zStick) / 32767);
-            break;
-          }
-          case (2) :{ centerLeftZMicroseconds += ((zStick) / 32767);
-            break;
-          }
-          default : {
-            break;
-          }
-        }
-      }      
+
+      if (Xbox.getButtonClick(DOWN)) {
+        centerRightZMicroseconds -= 5;
+      }
+      break;
     }
+  case (2) : {
+      if (Xbox.getButtonClick(UP)) {
+        centerLeftZMicroseconds += 5;
+      }
+
+      if (Xbox.getButtonClick(DOWN)) {
+        centerLeftZMicroseconds -= 5;
+      }
+      break;
+    }
+    case (3) : {
+        if (Xbox.getButtonClick(UP)) {
+          centerRightXMicroseconds += 5;
+        }
+
+        if (Xbox.getButtonClick(DOWN)) {
+          centerRightXMicroseconds -= 5;
+        }
+        break;
+      }
+    case (4) : {
+        if (Xbox.getButtonClick(UP)) {
+          centerLeftXMicroseconds += 5;
+        }
+
+        if (Xbox.getButtonClick(DOWN)) {
+          centerLeftXMicroseconds -= 5;
+        }
+        break;
+      }
+    default : {
+        break;
+      }
   }
 }
