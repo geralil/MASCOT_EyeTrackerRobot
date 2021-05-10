@@ -1,3 +1,14 @@
+/*
+ * Final code that is the product of work performed by Teams MASCOT and SPARKS from Feb-May '21.
+ * Team members from MASCOT include: 
+ * - Brenno Aguiar Bonfim Cruz - George Eralil - Kyle Butzerin - Mathew Ubachs - Chenhao Yu
+ * - Matthew James
+ * Work done by MASCOT deals with the eye and shoulder subsystems.
+ * Team members from SPARKS include: 
+ * - Kaitlyn Lewis - Brittney Downing - Max Larsen - Carson Kreager - Bennet Moore
+ * Work done by SPARKS deals with the neck subsystem.
+ */
+
 #include "Functions.h"
 
  
@@ -50,16 +61,19 @@ void setup() {
    * stepper two is back right
    * stepper three is back left
    */
-  stepperOne.setCurrentPosition(laststepperposOne); //laststepperposOne); //knownstepperposOne);
+  stepperOne.setCurrentPosition(knownstepperposOne); //laststepperposOne); //knownstepperposOne);
   stepperOne.setMaxSpeed(3000); //SPEED = Steps / second 
+  stepperOne.setSpeed(900);
   stepperOne.setAcceleration(3000); //ACCELERATION = Steps /(second)^2    
   delay(500);
-  stepperTwo.setCurrentPosition(laststepperposTwo); //laststepperposTwo); //knownstepperposTwo);
+  stepperTwo.setCurrentPosition(knownstepperposTwo); //laststepperposTwo); //knownstepperposTwo);
   stepperTwo.setMaxSpeed(3000); //SPEED = Steps / second 
+  stepperTwo.setSpeed(900);
   stepperTwo.setAcceleration(3000); //ACCELERATION = Steps /(second)^2
   delay(500); 
-  stepperThree.setCurrentPosition(laststepperposThree); //laststepperposThree); //knownstepperposThree); 
+  stepperThree.setCurrentPosition(knownstepperposThree); //laststepperposThree); //knownstepperposThree); 
   stepperThree.setMaxSpeed(3000); //SPEED = Steps / second 
+  stepperThree.setSpeed(900);
   stepperThree.setAcceleration(3000); //ACCELERATION = Steps /(second)^2      
   delay(500);
 
@@ -150,6 +164,11 @@ void loop() {
     case (Neck):
       {
         runNeckState();
+        break;
+      }
+    case (SpinnyBoi):
+      {
+        runSpinnyBoiState();
         break;
       }
   }

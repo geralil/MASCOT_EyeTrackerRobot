@@ -26,7 +26,7 @@ void ReadAnalogNeck()
   // mapping the XBOX analog inputs between -1 and 1
   Analog_XN = mapf(float(Xbox.getAnalogHat(LeftHatX)),-32767.0,32767.0,-1.0,1.0);
   Analog_YN = mapf(float(Xbox.getAnalogHat(LeftHatY)),-32767.0,32767.0,-1.0,1.0);
-  Analog_Yaw = mapf(Xbox.getAnalogHat(RightHatX), -32767, 32767, -1, 1);
+  Analog_Yaw = mapf(Xbox.getAnalogHat(RightHatX), -32767, 32767, 0, 1);
   
   bool shouldupdatepos = false ;
 
@@ -62,11 +62,7 @@ void ReadAnalogNeck()
   {
     PhiS = atan2(deltay,deltax) - M_PI_2;
     PhiR = (3.1459/6) * sqrt(sq(deltay) + sq(deltax));
-
-    Serial.print("Phi S   ");
-    Serial.println(PhiS,6);
-    Serial.print("Phi R   ");
-    Serial.println(PhiR,6);
+    PhiD = deltayaw*180;
 
     BLA::Matrix<6> xi_01 = {0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
     BLA::Matrix<6> xi_12 = {0.0, 0.0, 1.0, 0.0, PhiR/Lspring, 0.0};
@@ -75,24 +71,8 @@ void ReadAnalogNeck()
     BLA::Matrix<4,4> g01 = expmxi_Correct(xi_01*PhiS);
     BLA::Matrix<4,4> g02 = expmxi_Correct(xi_12*Lspring);
     BLA::Matrix<4,4> g03 = expmxi_Correct(xi_23*(-PhiS));
-
-    Serial.println("xi_01   ");
-    Serial<<xi_01;
-    Serial.println("xi_12   ");
-    Serial<<xi_12;
-    Serial.println("xi_23   ");
-    Serial<<xi_23;
-    
-    Serial.println("g01   ");
-    PrintG(g01);
-    Serial.println("g02   ");
-    PrintG(g02);
-    Serial.println("g03   ");
-    PrintG(g03);
     
     BLA::Matrix<4,4> gg03 = g01*g02*g03;
-
-
 
     BLA::Matrix<3> EulerVector = EVector(gg03);
     BLA::Matrix<3> TranslationVector = TVector(gg03);
@@ -104,9 +84,6 @@ void ReadAnalogNeck()
     Serial.println("GG03 Translation Vector");
     Serial<<TranslationVector;
     Serial.println("   ");
-
-    Serial.println(deltayaw);
-    
 
     BLA::Matrix<4,4> g_O_B1 = {1.0, 0.0, 0.0, 0.06*cos(0*2*3.14159/3),
                              0.0, 1.0, 0.0, 0.06*sin(0*2*3.14159/3),
@@ -145,8 +122,6 @@ void ReadAnalogNeck()
     BLA::Matrix<4,4> g_O_P2 = gg03*g_Pc_P2;
     BLA::Matrix<4,4> g_O_P3 = gg03*g_Pc_P3;
 
-    Serial.println("G b1 p1");
-    Serial << g_B1_P1;
 
     CableOneLength = sqrt(sq(g_B1_P1(0,3)) + sq(g_B1_P1(1,3)) + sq(g_B1_P1(2,3)));
     CableTwoLength = sqrt(sq(g_B2_P2(0,3)) + sq(g_B2_P2(1,3)) + sq(g_B2_P2(2,3)));
@@ -157,13 +132,21 @@ void ReadAnalogNeck()
     desiredstepperposThree = CableThreeLength/mmperstep;             //(laststepperposThree/lastCableLengthThree);  //mmperstep;
   
     stepperOne.moveTo(desiredstepperposOne);
-    //stepperOne.setSpeed(VelocityStepperOne);
     stepperTwo.moveTo(desiredstepperposTwo);
-    //stepperTwo.setSpeed(VelocityStepperTwo);
     stepperThree.moveTo(desiredstepperposThree);
-    //stepperThree.setSpeed(VelocityStepperThree); 
-    NeckServo.write(120);
     
+
+//// gearratio = 0.4545;
+//
+//    NeckServo.write(yawwrite);
+//
+//    float realYaw = (deltayaw - 90)*servoTrans;
+//
+//    Serial.print("realYaw: ");
+//    Serial.println(realYaw);
+//    NeckAngles();
+
+   
     laststepperposOne = stepperOne.currentPosition();
     laststepperposTwo = stepperTwo.currentPosition();
     laststepperposThree = stepperThree.currentPosition();

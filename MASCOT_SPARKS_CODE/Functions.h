@@ -25,7 +25,7 @@ Adafruit_BNO055 bno = Adafruit_BNO055(55);
 
 // Library for Nextion screen and GUI implementation
 #include <SoftwareSerial.h>
-#include <Nextion.h>
+//#include <Nextion.h>
 
 // Create State Machine
 enum StateMachineState {
@@ -40,6 +40,7 @@ enum StateMachineState {
   NeckCalibration = 8,        // Press UP on XBOX Controller
   MoveToCalibrationState = 9, // Press DOWN on XBOX Controller
   Neck = 10,                  // Press LEFT on XBOX Controller
+  SpinnyBoi = 11,             // Press RIGHT on Xbox Controller
 };
 StateMachineState state = MenuMode;
 
@@ -139,7 +140,7 @@ float StepsPerMM = 81; //was 80.22
    Conversion factor of the angle of rotation of the servos in microseconds-per-degree.
 */
 float microsecondsPerDegree = 10.20408163;
-float leftMicrosecondsPerDegree = 10.20408163*0.98;
+float leftMicrosecondsPerDegree = 10.20408163*1.2;
 float rightMicrosecondsPerDegree = 10.20408163;
 float leftXMicrosceondsPerDegree = 10.20408163*1.03;
 
@@ -183,7 +184,7 @@ int pitch=0;
 int roll=0;
 int yaw=0;
 
-float limN = 0.15;      // limiting value for determining if Neck stepper value needs to be updated.
+float limN = 0.3;      // limiting value for determining if Neck stepper value needs to be updated.
 float gainx = 0.1;
 float gainy = 0.1;
 float gainyaw = 0.1;
@@ -203,6 +204,14 @@ float Lspring = 0.127;
              
 float PhiR = 0.0;                   //Amplitude of tilt
 float PhiS = 0.0;                   //Direction of tilt
+float PhiD = 0.0;                   //Yaw
+
+/*
+ * Variables for scaling the servo back to 180 scale instead of 270 and accounting for gear ratio
+ */
+
+float servoTrans = 52.0/90.0;
+float gearratio = 0.4545;
 
 /*
  * Variables for the length of each of the cables
@@ -612,11 +621,6 @@ void ReadCalibrationVariablesFromProm()
   eeAddress += sizeof(float);
   EEPROM.get(eeAddress, servoCenter);
   centerRightZMicroseconds = servoCenter;
-
-  Serial.println(centerLeftXMicroseconds);
-  Serial.println(centerLeftZMicroseconds);
-  Serial.println(stepperX.currentPosition());
-  Serial.println(stepperY.currentPosition());
   
   Serial.println("Variables read!");
   UpdateTransformation();
@@ -805,6 +809,11 @@ bool IfButtonPressed()
     state = Neck;
     pressed = true;
   }
+  if (Xbox.getButtonClick(RIGHT))
+  {
+    state = SpinnyBoi;
+    pressed = true;
+  }
   return pressed;
 }
 
@@ -814,6 +823,8 @@ bool IfButtonPressed()
 */
 void runMenuModeState()
 {
+  Serial.println("I am here yoh");
+  
   IfButtonPressed();
 }
 
@@ -846,44 +857,8 @@ void runServoCalibrationState()
 */
 void runServoManualState()
 {
-//  for (int i = 83; i < 100; i+=20)
-//  {
-//    NeckServo.write(i);
-//    UpdateTransformation();
-//    GetScreenDotPosition();
-//    parallax();
-//    delay(1000);
-//  }
-//  
-//  for (int i = 100; i > 83; i-=20)
-//  {
-//    NeckServo.write(i);
-//    UpdateTransformation();
-//    GetScreenDotPosition();
-//    parallax();
-//    delay(1000);
-//  }
-//  for (int i = 83; i > 65; i-=20)
-//  {
-//    NeckServo.write(i);
-//    UpdateTransformation();
-//    GetScreenDotPosition();
-//    parallax();
-//    delay(1000);
-//  }
-//  for (int i = 65; i < 83; i+=20)
-//  {
-//    NeckServo.write(i);
-//    UpdateTransformation();
-//    GetScreenDotPosition();
-//    parallax();
-//    delay(1000);
-//  }
-   NeckServo.write(100);
-   UpdateTransformation();
-   GetScreenDotPosition();
-   parallax();
-  
+  GetScreenDotPosition();
+  parallax();
 
   IfButtonPressed();
 }
@@ -895,10 +870,10 @@ void runServoManualState()
 */
 void runStepperHomeState()
 {
-  zeroStepper(ydir, ypulse, yEnd);
-  stepperY.setCurrentPosition(500);
   zeroStepper(xdir, xpulse, xEnd); // DO NOT switch with Z
   stepperX.setCurrentPosition(-500);
+  zeroStepper(ydir, ypulse, yEnd);
+  stepperY.setCurrentPosition(500);
   zeroStepper(zdir, zpulse, zEnd); // DO NOT switch with X
   stepperZ.setCurrentPosition(500);
 
@@ -974,105 +949,162 @@ void runFindCoordinatesState()
 }
 
 /*
+ * Function to check if neck is Precalibrated and good to go 
+ */
+
+bool PreCalibrationState()
+{
+
+  bool goodtogo = false; 
+  Usb.Task();
+  if (Xbox.getButtonClick(START))
+  {
+    // Good to go 
+    ReadCalibrationStepperPosFromProm();
+    ReadLastStepperPosFromProm();
+
+    //Set operating parameters for stepper motors
+    stepperOne.setCurrentPosition(laststepperposOne);
+    delay(500);
+    stepperTwo.setCurrentPosition(laststepperposTwo); 
+    delay(500);
+    stepperThree.setCurrentPosition(laststepperposThree);     
+    delay(500);
+    state = MenuMode;
+    goodtogo = true;
+  }
+  else if (Xbox.getButtonClick(SELECT))
+  {
+    // No Good
+    //Set operating parameters for stepper motors
+    stepperOne.setCurrentPosition(knownstepperposOne);   
+    delay(500);
+    stepperTwo.setCurrentPosition(knownstepperposTwo); 
+    delay(500); 
+    stepperThree.setCurrentPosition(knownstepperposThree);       
+    delay(500);
+    goodtogo = false;
+  }
+  return goodtogo;
+}
+
+/*
+ * Function that will check if neck calibration is complete 
+ */
+//bool shouldexitCalState()
+//{
+//  bool exitstate = false;
+//
+//  if (Xbox.getButtonClick(START))
+//  {
+//    exitstate = true;
+//  }
+//  return exitstate;
+//}
+
+
+
+/*
  * Function that will be used to calibrate the neck steppers
  * to their 0 angle position.
  */
 void runNeckCalibrationState()
 {
-  Serial.println("I am here 1");
-  Usb.Task();
-  
-  int i = 0;
-  int j = 0;
-  int k = 0;
-
-  /*
-   * When the X button is pressed, write the calibration variables to prom
-   * write the last neck stepper configuration to prom
-   * get out of neck calibration state
-   */
-  if(Xbox.getButtonClick(X))
+  if (PreCalibrationState() == true)
   {
-    Serial.println("I am here 1");
-    WriteCalibrationStepperPosToProm();
-    WriteLastStepperPosToProm();
-    state = MenuMode; 
-  }
-  /*
-   * When the Y button is pressed, we start calibrating neck steppers one by one
-   * Neck Stepper One is the front stepper of the neck.
-   * Neck Stepper Two is the back right stepper.
-   * Neck Stepper Three is the back left stepper.
-   */
-  else if(Xbox.getButtonClick(Y))
-  {
-    Usb.Task();
     Serial.println("I am here 2");
-
-    // Stepper One
-    while (i == 0)
+    
+    state = MenuMode;
+  }
+  else 
+  {
+    bool exitstate = false;
+    while (exitstate == false)
     {
       Usb.Task();
-      
-      if (Xbox.getButtonClick(UP))
+      int i = 0;
+      int j = 0;
+      int k = 0;
+      /*
+       * When the Y button is pressed, we start calibrating neck steppers one by one
+       * Neck Stepper One is the front stepper of the neck.
+       * Neck Stepper Two is the back right stepper.
+       * Neck Stepper Three is the back left stepper.
+       */
+      while (i == 0)
       {
-        stepperOne.runToNewPosition(knownstepperposOne+100); //loosen
-        stepperOne.setCurrentPosition(knownstepperposOne); 
-        stepperOne.setMaxSpeed(3000);                        //SPEED = Steps / second 
-        stepperOne.setAcceleration(3000);                    //ACCELERATION = Steps /(second)^2
-        NeckAngles();  
+        Usb.Task();
+        if (Xbox.getButtonClick(UP))
+        {
+          stepperOne.runToNewPosition(knownstepperposOne+100); //loosen
+          stepperOne.setCurrentPosition(knownstepperposOne); 
+          stepperOne.setMaxSpeed(3000);                       //SPEED = Steps / second 
+          stepperOne.setAcceleration(3000);                   //ACCELERATION = Steps /(second)^2
+          NeckAngles();  
+        }
+        else if (Xbox.getButtonClick(DOWN))
+         {
+          stepperOne.runToNewPosition(knownstepperposOne-100); //tightening 
+          stepperOne.setCurrentPosition(knownstepperposOne); 
+          stepperOne.setMaxSpeed(3000);                       //SPEED = Steps / second 
+          stepperOne.setAcceleration(3000);                   //ACCELERATION = Steps /(second)^2    
+          NeckAngles();
+          }
+        else if (Xbox.getButtonClick(Y))
+        {
+          i = 1;
+        }
+        else if (Xbox.getButtonClick(START))
+        {
+          i = 1;
+          WriteCalibrationStepperPosToProm();
+          WriteLastStepperPosToProm();
+          state = MenuMode; 
+          exitstate = true;
+        }
       }
-      else if (Xbox.getButtonClick(DOWN))
+      while (j == 0)
       {
-        stepperOne.runToNewPosition(knownstepperposOne-100); //tightening 
-        stepperOne.setCurrentPosition(knownstepperposOne); 
-        stepperOne.setMaxSpeed(3000);                       //SPEED = Steps / second 
-        stepperOne.setAcceleration(3000);                   //ACCELERATION = Steps /(second)^2    
-        NeckAngles();
-      }
-      else if (Xbox.getButtonClick(B))
-      {
-        i = 1;
-      }
-    }
-
-    // Stepper Two
-    while (j == 0)
-    {
        Usb.Task();
        if (Xbox.getButtonClick(UP))
-      {
-        stepperTwo.runToNewPosition(knownstepperposTwo+100); //loosen
-        stepperTwo.setCurrentPosition(knownstepperposTwo); 
-        stepperTwo.setMaxSpeed(3000);                       //SPEED = Steps / second 
-        stepperTwo.setAcceleration(3000);                   //ACCELERATION = Steps /(second)^2
-        NeckAngles();  
-      }
-      else if (Xbox.getButtonClick(DOWN))
-      {
-        stepperTwo.runToNewPosition(knownstepperposTwo-100); //tightening 
-        stepperTwo.setCurrentPosition(knownstepperposTwo); 
-        stepperTwo.setMaxSpeed(3000);                       //SPEED = Steps / second 
-        stepperTwo.setAcceleration(3000);                   //ACCELERATION = Steps /(second)^2    
-        NeckAngles();
-      }
-      else if (Xbox.getButtonClick(B))
-      {
-        j = 1;
-      }
-    }
-
-    // Stepper Three
-    while (k == 0)
-    {
-      Usb.Task();
-      if (Xbox.getButtonClick(UP))
         {
-          stepperThree.runToNewPosition(knownstepperposThree+100); //loosen
-          stepperThree.setCurrentPosition(knownstepperposThree); 
-          stepperThree.setMaxSpeed(3000);                         //SPEED = Steps / second 
-          stepperThree.setAcceleration(3000);                     //ACCELERATION = Steps /(second)^2
+          stepperTwo.runToNewPosition(knownstepperposTwo+100); //loosen
+          stepperTwo.setCurrentPosition(knownstepperposTwo); 
+          stepperTwo.setMaxSpeed(3000);                       //SPEED = Steps / second 
+          stepperTwo.setAcceleration(3000);                   //ACCELERATION = Steps /(second)^2
           NeckAngles();  
+        }
+        else if (Xbox.getButtonClick(DOWN))
+        {
+          stepperTwo.runToNewPosition(knownstepperposTwo-100); //tightening 
+          stepperTwo.setCurrentPosition(knownstepperposTwo); 
+          stepperTwo.setMaxSpeed(3000);                       //SPEED = Steps / second 
+          stepperTwo.setAcceleration(3000);                   //ACCELERATION = Steps /(second)^2    
+          NeckAngles();
+        }
+        else if (Xbox.getButtonClick(Y))//Stepper Three
+        {
+          j = 1;
+        }
+        else if (Xbox.getButtonClick(START))
+        {
+          j = 1;
+          WriteCalibrationStepperPosToProm();
+          WriteLastStepperPosToProm();
+          state = MenuMode; 
+          exitstate = true;
+        }
+      }
+      while (k == 0)
+      {
+        Usb.Task();
+        if (Xbox.getButtonClick(UP))
+         {
+           stepperThree.runToNewPosition(knownstepperposThree+100); //loosen
+           stepperThree.setCurrentPosition(knownstepperposThree); 
+           stepperThree.setMaxSpeed(3000);                          //SPEED = Steps / second 
+           stepperThree.setAcceleration(3000);                      //ACCELERATION = Steps /(second)^2
+           NeckAngles();  
         }
         else if (Xbox.getButtonClick(DOWN))
         {
@@ -1082,12 +1114,25 @@ void runNeckCalibrationState()
           stepperThree.setAcceleration(3000);                     //ACCELERATION = Steps /(second)^2    
           NeckAngles();
         }
-        else if (Xbox.getButtonClick(B))
+        else if (Xbox.getButtonClick(Y))
         {
           k = 1; 
+        }
+        else if (Xbox.getButtonClick(START))
+        {
+          k = 1;
+          WriteCalibrationStepperPosToProm();
+          WriteLastStepperPosToProm();
+          state = MenuMode;
+          exitstate = true; 
         } 
+      }
     }
+    WriteCalibrationStepperPosToProm();
+    WriteLastStepperPosToProm();
+    state = MenuMode; 
   }
+   Serial.println("I am here 3");
 }
 
 /*
@@ -1095,7 +1140,7 @@ void runNeckCalibrationState()
  */
 void runMoveToCalibrationState()
 {
-  
+  ReadCalibrationStepperPosFromProm();
   stepperOne.runToNewPosition(CalibrationStepperOne);   //loosen
   stepperOne.setCurrentPosition(CalibrationStepperOne); 
   stepperOne.setMaxSpeed(3000);                         //SPEED = Steps / second 
@@ -1140,6 +1185,21 @@ void runNeckState()
 }
 
 /*
+ * Temp Function for servo yaw controll
+ */
+
+void runSpinnyBoiState()
+{
+  while (IfButtonPressed() == false)
+  {
+    Usb.Task();
+    YawBitch();
+    delay(250);
+    NeckAngles();
+  }
+}
+
+/*
  * Function to obtain the average calibration variables for the XBOX analog sticks.
  */
 void InitialValues()
@@ -1166,7 +1226,7 @@ void InitialValues()
     tempYN += mapf(Xbox.getAnalogHat(LeftHatY), -32767, 32767, -1, 1);
     delay(10);
     tempR += map(Xbox.getAnalogHat(RightHatX), -32767, 32767, 0, 1023);
-    tempRN += mapf(Xbox.getAnalogHat(RightHatX), -32767, 32767, -1, 1);
+    tempRN += mapf(Xbox.getAnalogHat(RightHatX), -32767, 32767, 0, 1);
     delay(10);
   }
   //----------------------------------------------------------------------------
@@ -1186,596 +1246,41 @@ void InitialValues()
   Serial.println("Calibration finished");
 }
 
-float autoCoordinates[2][294] = {{69.21,
-52.27,
--37.24,
--56.47,
-7.15,
-52.27,
--70.3,
-7.15,
--50.49,
-52.27,
--37.24,
--37.24,
-52.27,
--35.14,
-33.38,
-69.21,
--10.75,
-82,
-7.15,
-34.51,
-70.08,
--10.75,
-7.15,
-35.4,
-33.38,
--70.3,
--10.75,
-7.15,
--37.24,
-70.08,
--28.86,
-7.15,
-48.87,
--56.47,
-7.15,
-70.08,
--28.86,
-7.15,
-70.08,
--10.75,
-16.35,
--56.47,
--28.86,
-7.15,
--87.28,
-69.21,
--70.3,
-7.15,
-95.97,
--87.28,
--10.75,
-52.27,
--56.47,
-34.51,
--10.75,
--70.3,
-82,
-7.15,
-69.21,
-52.27,
--37.24,
--56.47,
-7.15,
-52.27,
--70.3,
-7.15,
--50.49,
-52.27,
--37.24,
--37.24,
-52.27,
--35.14,
-33.38,
-69.21,
--10.75,
-7.15,
--37.24,
-70.08,
--28.86,
-7.15,
--56.47,
--16.82,
--56.47,
--28.86,
-14.68,
-70.08,
-34.51,
--56.47,
-82,
-7.15,
--37.24,
-52.27,
-34.51,
--50.49,
-52.27,
-34.51,
--16.86,
-7.15,
--70.25,
--87.28,
-14.68,
--70.3,
-7.15,
--10.75,
-70.08,
-7.15,
-48.87,
--87.28,
-52.67,
--56.47,
-7.15,
-69.21,
-52.27,
--37.24,
--56.47,
-7.15,
-48.87,
--56.47,
--87.28,
-34.51,
-52.27,
-34.51,
--16.86,
--37.24,
-33.38,
-69.21,
-7.15,
--87.28,
-34.51,
--50.49,
-7.15,
-95.97,
-33.38,
--28.86,
-95.97,
-70.08,
--70.3,
--56.47,
--37.24,
-33.38,
-69.21,
-7.15,
--87.28,
-34.51,
--50.49,
-7.15,
--28.86,
--56.47,
--70.25,
--87.28,
--28.86,
--50.49,
-52.27,
-34.51,
--16.86,
-67.73,
-7.15,
--50.49,
-70.08,
-52.27,
-34.51,
--16.86,
-7.15,
--10.75,
-16.35,
--56.47,
-7.15,
--87.28,
--35.14,
--10.75,
-52.27,
--16.82,
-52.27,
--10.75,
-52.27,
--56.47,
--70.3,
-7.15,
--10.75,
-16.35,
--87.28,
--10.75,
-7.15,
-14.68,
-70.08,
-33.38,
-7.15,
-69.21,
-70.08,
--16.82,
--56.47,
-7.15,
--87.28,
-34.51,
--50.49,
-7.15,
--70.3,
-95.97,
--56.47,
-34.51,
--50.49,
-52.27,
-34.51,
--16.86,
-7.15,
--10.75,
-52.27,
-48.87,
--56.47,
-7.15,
--70.25,
-52.27,
--10.75,
-16.35,
-7.15,
--10.75,
-16.35,
--56.47,
-7.15,
-95.97,
--56.47,
-70.08,
-95.97,
-69.21,
--56.47,
-7.15,
--10.75,
-16.35,
--87.28,
--10.75,
-7.15,
-14.68,
-70.08,
-33.38,
-7.15,
-69.21,
-70.08,
--16.82,
--56.47,
-67.73,
-7.15,
-52.27,
-7.15,
--10.75,
-16.35,
-52.27,
-34.51,
-52.67,
-7.15,
--10.75,
-16.35,
--87.28,
--10.75,
-7.15,
-52.27,
--70.3,
-7.15,
--10.75,
-16.35,
--56.47,
-7.15,
-48.87,
--56.47,
--87.28,
-34.51,
-52.27,
-34.51,
--16.86,
-7.15,
-70.08,
--37.24,
-7.15,
--10.75,
-16.35,
-52.27,
--70.3,
-7.15,
-16.35,
-33.38,
-48.87,
--87.28,
-34.51,
-7.15,
--56.47,
--46.43,
-95.97,
--56.47,
--28.86,
-52.27,
--56.47,
-34.51,
--35.14,
--56.47,
-82
-},
-                                  {-60.13,
--33.44,
--51.55,
--33.44,
--5.32,
--33.44,
--59.94,
--5.32,
--59.94,
--33.44,
--51.55,
--51.55,
--33.44,
--69.02,
--33.44,
--60.13,
--33.44,
--56.9,
--5.32,
--75.77,
--33.44,
--33.44,
--5.32,
--59.2,
--33.44,
--59.94,
--33.44,
--5.32,
--51.55,
--33.44,
--33.44,
--5.32,
--80.47,
--33.44,
--5.32,
--33.44,
--33.44,
--5.32,
--33.44,
--33.44,
--57.76,
--33.44,
--33.44,
--5.32,
--59.94,
--60.13,
--59.94,
--5.32,
--33.44,
--59.94,
--33.44,
--33.44,
--33.44,
--75.77,
--33.44,
--59.94,
--56.9,
--5.32,
--60.13,
--33.44,
--51.55,
--33.44,
--5.32,
--33.44,
--59.94,
--5.32,
--59.94,
--33.44,
--51.55,
--51.55,
--33.44,
--69.02,
--33.44,
--60.13,
--33.44,
--5.32,
--51.55,
--33.44,
--33.44,
--5.32,
--33.44,
--73.35,
--33.44,
--33.44,
--33.44,
--33.44,
--75.77,
--33.44,
--56.9,
--5.32,
--51.55,
--33.44,
--75.77,
--59.94,
--33.44,
--75.77,
--54.72,
--5.32,
--33.44,
--59.94,
--33.44,
--59.94,
--5.32,
--33.44,
--33.44,
--5.32,
--80.47,
--59.94,
--61.4,
--33.44,
--5.32,
--60.13,
--33.44,
--51.55,
--33.44,
--5.32,
--80.47,
--33.44,
--59.94,
--75.77,
--33.44,
--75.77,
--54.72,
--51.55,
--33.44,
--60.13,
--5.32,
--59.94,
--75.77,
--59.94,
--5.32,
--33.44,
--33.44,
--33.44,
--33.44,
--33.44,
--59.94,
--33.44,
--51.55,
--33.44,
--60.13,
--5.32,
--59.94,
--75.77,
--59.94,
--5.32,
--33.44,
--33.44,
--33.44,
--59.94,
--33.44,
--59.94,
--33.44,
--75.77,
--54.72,
--79.77,
--5.32,
--59.94,
--33.44,
--33.44,
--75.77,
--54.72,
--5.32,
--33.44,
--57.76,
--33.44,
--5.32,
--59.94,
--69.02,
--33.44,
--33.44,
--73.35,
--33.44,
--33.44,
--33.44,
--33.44,
--59.94,
--5.32,
--33.44,
--57.76,
--59.94,
--33.44,
--5.32,
--33.44,
--33.44,
--33.44,
--5.32,
--60.13,
--33.44,
--73.35,
--33.44,
--5.32,
--59.94,
--75.77,
--59.94,
--5.32,
--59.94,
--33.44,
--33.44,
--75.77,
--59.94,
--33.44,
--75.77,
--54.72,
--5.32,
--33.44,
--33.44,
--80.47,
--33.44,
--5.32,
--33.44,
--33.44,
--33.44,
--57.76,
--5.32,
--33.44,
--57.76,
--33.44,
--5.32,
--33.44,
--33.44,
--33.44,
--33.44,
--60.13,
--33.44,
--5.32,
--33.44,
--57.76,
--59.94,
--33.44,
--5.32,
--33.44,
--33.44,
--33.44,
--5.32,
--60.13,
--33.44,
--73.35,
--33.44,
--79.77,
--5.32,
--33.44,
--5.32,
--33.44,
--57.76,
--33.44,
--75.77,
--61.4,
--5.32,
--33.44,
--57.76,
--59.94,
--33.44,
--5.32,
--33.44,
--59.94,
--5.32,
--33.44,
--57.76,
--33.44,
--5.32,
--80.47,
--33.44,
--59.94,
--75.77,
--33.44,
--75.77,
--54.72,
--5.32,
--33.44,
--51.55,
--5.32,
--33.44,
--57.76,
--33.44,
--59.94,
--5.32,
--57.76,
--33.44,
--80.47,
--59.94,
--75.77,
--5.32,
--33.44,
--74.17,
--33.44,
--33.44,
--33.44,
--33.44,
--33.44,
--75.77,
--69.02,
--33.44,
--56.9
-}};
+float autoCoordinates[2][294] = {{69.21,52.27,-37.24,-56.47,7.15,52.27,-70.3,7.15,-50.49,52.27,-37.24,-37.24,
+52.27,-35.14,33.38,69.21,-10.75,82,7.15,34.51,70.08,-10.75,7.15,35.4,33.38,-70.3,-10.75,7.15,-37.24,70.08,-28.86,
+7.15,48.87,-56.47,7.15,70.08,-28.86,7.15,70.08,-10.75,16.35,-56.47,-28.86,7.15,-87.28,69.21,-70.3,7.15,95.97,-87.28,
+-10.75,52.27,-56.47,34.51,-10.75,-70.3,82,7.15,69.21,52.27,-37.24,-56.47,7.15,52.27,-70.3,7.15,-50.49,52.27,-37.24,
+-37.24,52.27,-35.14,33.38,69.21,-10.75,7.15,-37.24,70.08,-28.86,7.15,-56.47,-16.82,-56.47,-28.86,14.68,70.08,
+34.51,-56.47,82,7.15,-37.24,52.27,34.51,-50.49,52.27,34.51,-16.86,7.15,-70.25,-87.28,14.68,-70.3,7.15,-10.75,
+70.08,7.15,48.87,-87.28,52.67,-56.47,7.15,69.21,52.27,-37.24,-56.47,7.15,48.87,-56.47,-87.28,34.51,52.27,34.51,
+-16.86,-37.24,33.38,69.21,7.15,-87.28,34.51,-50.49,7.15,95.97,33.38,-28.86,95.97,70.08,-70.3,-56.47,-37.24,
+33.38,69.21,7.15,-87.28,34.51,-50.49,7.15,-28.86,-56.47,-70.25,-87.28,-28.86,-50.49,52.27,34.51,-16.86,67.73,
+7.15,-50.49,70.08,52.27,34.51,-16.86,7.15,-10.75,16.35,-56.47,7.15,-87.28,-35.14,-10.75,52.27,-16.82,52.27,
+-10.75,52.27,-56.47,-70.3,7.15,-10.75,16.35,-87.28,-10.75,7.15,14.68,70.08,33.38,7.15,69.21,70.08,-16.82,-56.47,
+7.15,-87.28,34.51,-50.49,7.15,-70.3,95.97,-56.47,34.51,-50.49,52.27,34.51,-16.86,7.15,-10.75,52.27,48.87,-56.47,
+7.15,-70.25,52.27,-10.75,16.35,7.15,-10.75,16.35,-56.47,7.15,95.97,-56.47,70.08,95.97,69.21,-56.47,7.15,-10.75,
+16.35,-87.28,-10.75,7.15,14.68,70.08,33.38,7.15,69.21,70.08,-16.82,-56.47,67.73,7.15,52.27,7.15,-10.75,16.35,52.27,
+34.51,52.67,7.15,-10.75,16.35,-87.28,-10.75,7.15,52.27,-70.3,7.15,-10.75,16.35,-56.47,7.15,48.87,-56.47,-87.28,
+34.51,52.27,34.51,-16.86,7.15,70.08,-37.24,7.15,-10.75,16.35,52.27,-70.3,7.15,16.35,33.38,48.87,-87.28,34.51,7.15,
+-56.47,-46.43,95.97,-56.47,-28.86,52.27,-56.47,34.51,-35.14,-56.47,82},
+{-60.13,-33.44,-51.55,-33.44,-5.32,-33.44,-59.94,-5.32,-59.94,-33.44,-51.55,-51.55,-33.44,-69.02,-33.44,-60.13,
+-33.44,-56.9,-5.32,-75.77,-33.44,-33.44,-5.32,-59.2,-33.44,-59.94,-33.44,-5.32,-51.55,-33.44,-33.44,-5.32,-80.47,
+-33.44,-5.32,-33.44,-33.44,-5.32,-33.44,-33.44,-57.76,-33.44,-33.44,-5.32,-59.94,-60.13,-59.94,-5.32,-33.44,-59.94,
+-33.44,-33.44,-33.44,-75.77,-33.44,-59.94,-56.9,-5.32,-60.13,-33.44,-51.55,-33.44,-5.32,-33.44,-59.94,-5.32,
+-59.94,-33.44,-51.55,-51.55,-33.44,-69.02,-33.44,-60.13,-33.44,-5.32,-51.55,-33.44,-33.44,-5.32,-33.44,-73.35,-33.44,
+-33.44,-33.44,-33.44,-75.77,-33.44,-56.9,-5.32,-51.55,-33.44,-75.77,-59.94,-33.44,-75.77,-54.72,-5.32,-33.44,-59.94,
+-33.44,-59.94,-5.32,-33.44,-33.44,-5.32,-80.47,-59.94,-61.4,-33.44,-5.32,-60.13,-33.44,-51.55,-33.44,-5.32,
+-80.47,-33.44,-59.94,-75.77,-33.44,-75.77,-54.72,-51.55,-33.44,-60.13,-5.32,-59.94,-75.77,-59.94,-5.32,-33.44,
+-33.44,-33.44,-33.44,-33.44,-59.94,-33.44,-51.55,-33.44,-60.13,-5.32,-59.94,-75.77,-59.94,-5.32,-33.44,-33.44,
+-33.44,-59.94,-33.44,-59.94,-33.44,-75.77,-54.72,-79.77,-5.32,-59.94,-33.44,-33.44,-75.77,-54.72,-5.32,-33.44,
+-57.76,-33.44,-5.32,-59.94,-69.02,-33.44,-33.44,-73.35,-33.44,-33.44,-33.44,-33.44,-59.94,-5.32,-33.44,-57.76,
+-59.94,-33.44,-5.32,-33.44,-33.44,-33.44,-5.32,-60.13,-33.44,-73.35,-33.44,-5.32,-59.94,-75.77,-59.94,-5.32,-59.94,
+-33.44,-33.44,-75.77,-59.94,-33.44,-75.77,-54.72,-5.32,-33.44,-33.44,-80.47,-33.44,-5.32,-33.44,-33.44,-33.44,
+-57.76,-5.32,-33.44,-57.76,-33.44,-5.32,-33.44,-33.44,-33.44,-33.44,-60.13,-33.44,-5.32,-33.44,-57.76,-59.94,
+-33.44,-5.32,-33.44,-33.44,-33.44,-5.32,-60.13,-33.44,-73.35,-33.44,-79.77,-5.32,-33.44,-5.32,-33.44,-57.76,
+-33.44,-75.77,-61.4,-5.32,-33.44,-57.76,-59.94,-33.44,-5.32,-33.44,-59.94,-5.32,-33.44,-57.76,-33.44,-5.32,-80.47,
+-33.44,-59.94,-75.77,-33.44,-75.77,-54.72,-5.32,-33.44,-51.55,-5.32,-33.44,-57.76,-33.44,-59.94,-5.32,-57.76,-33.44,
+-80.47,-59.94,-75.77,-5.32,-33.44,-74.17,-33.44,-33.44,-33.44,-33.44,-33.44,-75.77,-69.02,-33.44,-56.9}};
 
 /*
  * Function to go to predefined keyboard locations
@@ -1795,6 +1300,13 @@ void runAutoState()
     //Serial << screenDotPos;
     //Serial.println(" ");
     delay(1500);
+
+    // exit condition
+    Usb.Task();
+    if (Xbox.getButtonClick(B))
+    {
+      state = MenuMode;
+    }
   }
 
   state = MenuMode;

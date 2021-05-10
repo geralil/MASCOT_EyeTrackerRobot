@@ -31,8 +31,6 @@ void GetScreenDotPosition()
       }
     }
   }
-//  screenDotPos(0) = 0;
-//  screenDotPos(2) = 0;
   
   leftDotPos = gLS * screenDotPos;
   rightDotPos = gRS * screenDotPos;
@@ -66,7 +64,7 @@ void parallax() {
     XservoR.writeMicroseconds(centerRightXMicroseconds + (90 - alphaRight) * microsecondsPerDegree);
     //delay(50);
     ZservoR.writeMicroseconds(centerRightZMicroseconds + (betaRight) * microsecondsPerDegree);
-    //delay(10);
+    delay(10);
 
     //XservoL.writeMicroseconds(2000);
     //ZservoL.writeMicroseconds(2000);
@@ -149,4 +147,51 @@ void servoCalibration()
         break;
       }
   }
+}
+
+long lastjoystickyaw = micros();
+
+float mapfyaw(float x, float in_min, float in_max, float out_min, float out_max) 
+{
+     float result;
+     result = (x - in_min) * (out_max - out_min) / (in_max - in_min) + out_min;
+     return result;
+}
+
+void YawBitch()
+{
+  if ((micros() - lastjoystickyaw) < 200000)
+  {
+    return;
+  }
+
+  lastjoystickyaw = micros();
+
+  Analog_Yaw = mapfyaw(Xbox.getAnalogHat(RightHatX), -32767, 32767, 0, 1);
+  bool shouldupdatepos = false ;
+  float deltayaw = Analog_Yaw-Analog_RN_AVG;
+
+  if (abs(deltayaw) > (limN-0.15))
+  {
+    desiredneckyaw += gainyaw * deltayaw;
+    shouldupdatepos = true;
+  }
+
+  
+  if (shouldupdatepos == true) //If joystick position isnt at middle position
+  {
+   
+    PhiD = abs(deltayaw)*180;
+    // gearratio = 0.4545;
+
+    NeckServo.write(PhiD);
+
+    float realYaw = (PhiD - 90)*servoTrans;
+
+    Serial.print("realYaw: ");
+    Serial.println(realYaw);
+    //NeckAngles();
+  }
+
+//NeckServo.write(45);
 }
