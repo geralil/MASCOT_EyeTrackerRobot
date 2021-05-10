@@ -72,17 +72,17 @@ float Analog_RN_AVG = 0; //r-axis value average
     Stepper objects and servo objects will also be defined
 */
 
-int xEnd = 23; // X axis limit switch pin
-int zEnd = 25; // Z axis limit switch pin
-int yEnd = 27; // Y axis limit switch pin
+int xEnd = 2; // X axis limit switch pin
+int zEnd = 4; // Z axis limit switch pin
+int yEnd = 7; // Y axis limit switch pin
 
 // Declare Servo Pins - check wiring diagram if you have any questions
-int xLPin = 4;
+int xLPin = 11;
 int zLPin = 5;
 int xRPin = 6;
-int zRPin = 7;
+int zRPin = 3;
 // Declaring neck servo pins
-int NSPin = 2;
+int NSPin = 12;
 
 boolean limit = false;  // default value of limit switch reading
 
@@ -92,15 +92,15 @@ int onepulse=42;
 int twodir=44; 
 int twopulse=46; 
 int threedir=48;  
-int threepulse=23; //50 on PCB;
+int threepulse=14; //50 on PCB;
 
 // SHOULDER Stepper Direction and Pulse Pins
-int xdir = 35;
-int xpulse = 33;
-int ydir = 37;
-int ypulse = 39;
-int zdir = 11;
-int zpulse = 8;
+int xdir = A1;
+int xpulse = A0;
+int ydir = A3;
+int ypulse = A2;
+int zdir = A5;
+int zpulse = A4;
 
 /* Initialize AccelStepper objects for each stepper motor.
    AccelStepper is an amazing library that offers a ton of great features for stepper control.
@@ -315,6 +315,11 @@ float norm(BLA::Matrix<3> v)
 {
     return sqrt( v(0)*v(0)+ v(1)*v(1) + v(2)*v(2)); 
 }
+
+float norm_6(BLA::Matrix<6> v)
+{
+  return sqrt( v(0)*v(0)+ v(1)*v(1) + v(2)*v(2)+ v(3)*v(3)+ v(4)*v(4)+ v(5)*v(5));
+}
  
 BLA::Matrix<3,3> rodrigues(BLA::Matrix<3> v)
 {
@@ -352,6 +357,58 @@ BLA::Matrix<4,4> expmxi(BLA::Matrix<6> xi)
   return g;
 }
 
+BLA::Matrix<3,3> OuterProduct (BLA::Matrix<3> w)
+{
+  BLA::Matrix<3,3> product;
+  
+  for (int i = 0; i < 3; i++)
+  {
+    for (int j = 0; j < 3; j++)
+    {
+      product(i,j) = w(i) * w(j);
+    }
+  }
+
+  return product;
+}
+
+BLA::Matrix<3> CrossProduct (BLA::Matrix<3> w, BLA::Matrix<3> v)
+{
+  BLA::Matrix<3,3> w_hat = hat(w);
+  return w_hat*v;
+}
+
+BLA::Matrix<4,4> expmxi_Correct(BLA::Matrix<6> xi)
+{
+  BLA::Matrix<3> w_noNorm = {xi(3), xi(4), xi(5)};
+  float theta = norm(w_noNorm);
+  BLA::Matrix<6> xiNorm = xi;
+
+  if (theta != 0)
+  {
+    xiNorm = xi/theta;
+  }
+
+  BLA::Matrix<3> v = {xiNorm(0), xiNorm(1), xiNorm(2)};
+  BLA::Matrix<3> w = {xiNorm(3), xiNorm(4), xiNorm(5)};
+
+  BLA::Matrix<3,3> R = rodrigues(w*theta);
+
+  BLA::Matrix<3,3> I = eye();
+
+  BLA::Matrix<3,3> outProduct = OuterProduct(w);
+  BLA::Matrix<3> crossProduct = CrossProduct(w,v);
+
+  BLA::Matrix<3> T = ((I - R) * crossProduct) + (outProduct * v * theta);
+
+  BLA::Matrix<4,4> g = {R(0,0), R(0,1), R(0,2), T(0),
+                        R(1,0), R(1,1), R(1,2), T(1),
+                        R(2,0), R(2,1), R(2,2), T(2),
+                              0,      0,      0,       1};
+
+  return g;
+}
+
 BLA::Matrix<3> EVector(BLA::Matrix<4,4> gg03)
 {
   float alpha = (atan2(gg03(1,0),gg03(0,0)))*(180.00/M_PI);
@@ -382,6 +439,20 @@ BLA::Matrix<4, 4> xform(float alpha, float beta, float gamma, float x, float y, 
   return g;
 }
 
+void PrintG(BLA::Matrix<4,4> g)
+{
+  for (int i = 0; i < 4; i++)
+  {
+    for (int j = 0; j < 4; j++)
+    {
+      float x = g(i,j);
+      Serial.print(x,6);
+      Serial.print("     ");
+    }
+    Serial.println(" ");
+  }
+}
+
 /*
   This is the distance between our origin coordinate system B
   (when steppers hit the limit switches
@@ -402,7 +473,7 @@ BLA::Matrix<4, 4> gBC = xform(0,0,0,-stepperX.currentPosition() / StepsPerMM,
    (stage connected to X,Y,Z steppers) to the imaginary point
    in between the eyes(D coordinate system).
 */
-BLA::Matrix<4, 4> gCD = xform(0,0,0.2379756435,0, 175, 290);
+BLA::Matrix<4, 4> gCD = xform(0,0,0,0, 175, 290);
 
 /*
    This is the distance between our D coordinate system to the center of the left eye L.
@@ -468,10 +539,13 @@ float betaLeftPrev = 0;
  */
 void UpdateTransformation()
 {
+  float yawAngle = (((NeckServo.read())-83)*2) * (3.14159/180);
   // Recalculating gBC and gLS, gRS
   gBC = xform(0,0,0,-stepperX.currentPosition() / StepsPerMM,
                               -stepperY.currentPosition() / StepsPerMM,
                               stepperZ.currentPosition() / StepsPerMM);
+                              
+  gCD = xform(0,0,yawAngle,0, 175, 290);
   gLS = gLD.Inverse() * gCD.Inverse() * gBC.Inverse() * gBS;
 
   gRS = gRD.Inverse() * gCD.Inverse() * gBC.Inverse() * gBS;
@@ -538,6 +612,11 @@ void ReadCalibrationVariablesFromProm()
   eeAddress += sizeof(float);
   EEPROM.get(eeAddress, servoCenter);
   centerRightZMicroseconds = servoCenter;
+
+  Serial.println(centerLeftXMicroseconds);
+  Serial.println(centerLeftZMicroseconds);
+  Serial.println(stepperX.currentPosition());
+  Serial.println(stepperY.currentPosition());
   
   Serial.println("Variables read!");
   UpdateTransformation();
@@ -767,8 +846,44 @@ void runServoCalibrationState()
 */
 void runServoManualState()
 {
-  GetScreenDotPosition();
-  parallax();
+//  for (int i = 83; i < 100; i+=20)
+//  {
+//    NeckServo.write(i);
+//    UpdateTransformation();
+//    GetScreenDotPosition();
+//    parallax();
+//    delay(1000);
+//  }
+//  
+//  for (int i = 100; i > 83; i-=20)
+//  {
+//    NeckServo.write(i);
+//    UpdateTransformation();
+//    GetScreenDotPosition();
+//    parallax();
+//    delay(1000);
+//  }
+//  for (int i = 83; i > 65; i-=20)
+//  {
+//    NeckServo.write(i);
+//    UpdateTransformation();
+//    GetScreenDotPosition();
+//    parallax();
+//    delay(1000);
+//  }
+//  for (int i = 65; i < 83; i+=20)
+//  {
+//    NeckServo.write(i);
+//    UpdateTransformation();
+//    GetScreenDotPosition();
+//    parallax();
+//    delay(1000);
+//  }
+   NeckServo.write(100);
+   UpdateTransformation();
+   GetScreenDotPosition();
+   parallax();
+  
 
   IfButtonPressed();
 }
@@ -780,10 +895,10 @@ void runServoManualState()
 */
 void runStepperHomeState()
 {
-  zeroStepper(xdir, xpulse, xEnd); // DO NOT switch with Z
-  stepperX.setCurrentPosition(-500);
   zeroStepper(ydir, ypulse, yEnd);
   stepperY.setCurrentPosition(500);
+  zeroStepper(xdir, xpulse, xEnd); // DO NOT switch with Z
+  stepperX.setCurrentPosition(-500);
   zeroStepper(zdir, zpulse, zEnd); // DO NOT switch with X
   stepperZ.setCurrentPosition(500);
 
@@ -999,6 +1114,7 @@ void runMoveToCalibrationState()
   EulerVectorI();
   NeckAngles();
   Lspring = ((CalibrationStepperOne*mmperstep)+(CalibrationStepperTwo*mmperstep)+(CalibrationStepperThree*mmperstep))/3.0;
+  Serial.println(Lspring*1000);
   WriteLastStepperPosToProm();
   state = MenuMode;  
 }

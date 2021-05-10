@@ -30,8 +30,8 @@ void setup() {
   pinMode(yEnd, INPUT); //z
   pinMode(zEnd, INPUT); //y
   
-  pinMode(41, OUTPUT); 
-  digitalWrite(41, LOW); //Servo enable using relay - using that to prevent jitter when arduino starts
+  pinMode(8, OUTPUT); 
+  digitalWrite(8, LOW); //Servo enable using relay - using that to prevent jitter when arduino starts
   
   // attaching servos to their respective pins.//
   XservoL.attach(xLPin);
@@ -41,8 +41,8 @@ void setup() {
   NeckServo.attach(NSPin);
 
   // Loading calibration variables for neck stepper from EEprom
-  ReadCalibrationStepperPosFromProm();
-  ReadLastStepperPosFromProm();
+  //ReadCalibrationStepperPosFromProm();
+  //ReadLastStepperPosFromProm();
 
   /* 
    * Set operating parameters for neck stepper motors 
@@ -50,15 +50,15 @@ void setup() {
    * stepper two is back right
    * stepper three is back left
    */
-  stepperOne.setCurrentPosition(knownstepperposOne); //laststepperposOne); //knownstepperposOne);
+  stepperOne.setCurrentPosition(laststepperposOne); //laststepperposOne); //knownstepperposOne);
   stepperOne.setMaxSpeed(3000); //SPEED = Steps / second 
   stepperOne.setAcceleration(3000); //ACCELERATION = Steps /(second)^2    
   delay(500);
-  stepperTwo.setCurrentPosition(knownstepperposTwo); //laststepperposTwo); //knownstepperposTwo);
+  stepperTwo.setCurrentPosition(laststepperposTwo); //laststepperposTwo); //knownstepperposTwo);
   stepperTwo.setMaxSpeed(3000); //SPEED = Steps / second 
   stepperTwo.setAcceleration(3000); //ACCELERATION = Steps /(second)^2
   delay(500); 
-  stepperThree.setCurrentPosition(knownstepperposThree); //laststepperposThree); //knownstepperposThree); 
+  stepperThree.setCurrentPosition(laststepperposThree); //laststepperposThree); //knownstepperposThree); 
   stepperThree.setMaxSpeed(3000); //SPEED = Steps / second 
   stepperThree.setAcceleration(3000); //ACCELERATION = Steps /(second)^2      
   delay(500);
@@ -70,6 +70,7 @@ void setup() {
   ZservoL.writeMicroseconds(centerLeftZMicroseconds);    // -ve up; +ve down
   XservoR.writeMicroseconds(centerRightXMicroseconds);    // -ve left; +ve right
   ZservoR.writeMicroseconds(centerRightZMicroseconds);    // -ve down; +ve up
+  NeckServo.write(83);
   
   // Set operating parameters for stepper motors
   stepperY.setMaxSpeed(10000); //SPEED = Steps / second

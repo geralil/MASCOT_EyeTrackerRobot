@@ -31,7 +31,9 @@ void GetScreenDotPosition()
       }
     }
   }
-
+//  screenDotPos(0) = 0;
+//  screenDotPos(2) = 0;
+  
   leftDotPos = gLS * screenDotPos;
   rightDotPos = gRS * screenDotPos;
 }
@@ -64,10 +66,18 @@ void parallax() {
     XservoR.writeMicroseconds(centerRightXMicroseconds + (90 - alphaRight) * microsecondsPerDegree);
     //delay(50);
     ZservoR.writeMicroseconds(centerRightZMicroseconds + (betaRight) * microsecondsPerDegree);
-    delay(10);
+    //delay(10);
+
+    //XservoL.writeMicroseconds(2000);
+    //ZservoL.writeMicroseconds(2000);
 
     alphaLeftPrev = alphaLeft;
     betaLeftPrev = betaLeft;
+
+    Serial.println(centerLeftXMicroseconds);
+    Serial.println(centerLeftZMicroseconds);
+    Serial.println(centerRightXMicroseconds);
+    Serial.println(centerRightZMicroseconds);
   }
 }
 

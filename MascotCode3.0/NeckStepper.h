@@ -64,19 +64,35 @@ void ReadAnalogNeck()
     PhiR = (3.1459/6) * sqrt(sq(deltay) + sq(deltax));
 
     Serial.print("Phi S   ");
-    Serial.println(PhiS);
+    Serial.println(PhiS,6);
     Serial.print("Phi R   ");
-    Serial.println(PhiR);
+    Serial.println(PhiR,6);
 
     BLA::Matrix<6> xi_01 = {0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
     BLA::Matrix<6> xi_12 = {0.0, 0.0, 1.0, 0.0, PhiR/Lspring, 0.0};
     BLA::Matrix<6> xi_23 = {0.0, 0.0, 0.0, 0.0, 0.0, 1.0};
     //g00 
-    BLA::Matrix<4,4> g01 = expmxi(xi_01*PhiS);
-    BLA::Matrix<4,4> g02 = expmxi(xi_12*Lspring);
-    BLA::Matrix<4,4> g03 = expmxi(xi_23*(-PhiS));
+    BLA::Matrix<4,4> g01 = expmxi_Correct(xi_01*PhiS);
+    BLA::Matrix<4,4> g02 = expmxi_Correct(xi_12*Lspring);
+    BLA::Matrix<4,4> g03 = expmxi_Correct(xi_23*(-PhiS));
 
+    Serial.println("xi_01   ");
+    Serial<<xi_01;
+    Serial.println("xi_12   ");
+    Serial<<xi_12;
+    Serial.println("xi_23   ");
+    Serial<<xi_23;
+    
+    Serial.println("g01   ");
+    PrintG(g01);
+    Serial.println("g02   ");
+    PrintG(g02);
+    Serial.println("g03   ");
+    PrintG(g03);
+    
     BLA::Matrix<4,4> gg03 = g01*g02*g03;
+
+
 
     BLA::Matrix<3> EulerVector = EVector(gg03);
     BLA::Matrix<3> TranslationVector = TVector(gg03);
@@ -129,6 +145,9 @@ void ReadAnalogNeck()
     BLA::Matrix<4,4> g_O_P2 = gg03*g_Pc_P2;
     BLA::Matrix<4,4> g_O_P3 = gg03*g_Pc_P3;
 
+    Serial.println("G b1 p1");
+    Serial << g_B1_P1;
+
     CableOneLength = sqrt(sq(g_B1_P1(0,3)) + sq(g_B1_P1(1,3)) + sq(g_B1_P1(2,3)));
     CableTwoLength = sqrt(sq(g_B2_P2(0,3)) + sq(g_B2_P2(1,3)) + sq(g_B2_P2(2,3)));
     CableThreeLength = sqrt(sq(g_B3_P3(0,3)) + sq(g_B3_P3(1,3)) + sq(g_B3_P3(2,3)));
@@ -143,7 +162,7 @@ void ReadAnalogNeck()
     //stepperTwo.setSpeed(VelocityStepperTwo);
     stepperThree.moveTo(desiredstepperposThree);
     //stepperThree.setSpeed(VelocityStepperThree); 
-    NeckServo.write(83 + 30);
+    NeckServo.write(120);
     
     laststepperposOne = stepperOne.currentPosition();
     laststepperposTwo = stepperTwo.currentPosition();
