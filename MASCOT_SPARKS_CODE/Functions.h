@@ -74,8 +74,8 @@ float Analog_RN_AVG = 0; //r-axis value average
 */
 
 int xEnd = 2; // X axis limit switch pin
-int zEnd = 4; // Z axis limit switch pin
-int yEnd = 7; // Y axis limit switch pin
+int zEnd = 7; // Z axis limit switch pin
+int yEnd = 4; // Y axis limit switch pin
 
 // Declare Servo Pins - check wiring diagram if you have any questions
 int xLPin = 11;
@@ -140,9 +140,9 @@ float StepsPerMM = 81; //was 80.22
    Conversion factor of the angle of rotation of the servos in microseconds-per-degree.
 */
 float microsecondsPerDegree = 10.20408163;
-float leftMicrosecondsPerDegree = 10.20408163*1.2;
+float leftMicrosecondsPerDegree = 10.20408163*1.03;
 float rightMicrosecondsPerDegree = 10.20408163;
-float leftXMicrosceondsPerDegree = 10.20408163*1.03;
+float leftXMicrosceondsPerDegree = 10.20408163 * 1.15;
 
 /*
  * 90 degree position for the eye servos that is used in
@@ -548,8 +548,9 @@ float betaLeftPrev = 0;
  */
 void UpdateTransformation()
 {
-  float yawAngle = (((NeckServo.read())-83)*2) * (3.14159/180);
+  float yawAngle = (((NeckServo.read())-120)*2) * (3.14159/180);
   // Recalculating gBC and gLS, gRS
+  Serial.println(yawAngle);
   gBC = xform(0,0,0,-stepperX.currentPosition() / StepsPerMM,
                               -stepperY.currentPosition() / StepsPerMM,
                               stepperZ.currentPosition() / StepsPerMM);
@@ -823,7 +824,7 @@ bool IfButtonPressed()
 */
 void runMenuModeState()
 {
-  Serial.println("I am here yoh");
+  //Serial.println("Menu Mode");
   
   IfButtonPressed();
 }
@@ -956,34 +957,40 @@ bool PreCalibrationState()
 {
 
   bool goodtogo = false; 
-  Usb.Task();
-  if (Xbox.getButtonClick(START))
+  
+  while (1)
   {
-    // Good to go 
-    ReadCalibrationStepperPosFromProm();
-    ReadLastStepperPosFromProm();
-
-    //Set operating parameters for stepper motors
-    stepperOne.setCurrentPosition(laststepperposOne);
-    delay(500);
-    stepperTwo.setCurrentPosition(laststepperposTwo); 
-    delay(500);
-    stepperThree.setCurrentPosition(laststepperposThree);     
-    delay(500);
-    state = MenuMode;
-    goodtogo = true;
-  }
-  else if (Xbox.getButtonClick(SELECT))
-  {
-    // No Good
-    //Set operating parameters for stepper motors
-    stepperOne.setCurrentPosition(knownstepperposOne);   
-    delay(500);
-    stepperTwo.setCurrentPosition(knownstepperposTwo); 
-    delay(500); 
-    stepperThree.setCurrentPosition(knownstepperposThree);       
-    delay(500);
-    goodtogo = false;
+    Usb.Task();
+    if (Xbox.getButtonClick(START))
+    {
+      // Good to go 
+      ReadCalibrationStepperPosFromProm();
+      ReadLastStepperPosFromProm();
+  
+      //Set operating parameters for stepper motors
+      stepperOne.setCurrentPosition(laststepperposOne);
+      delay(500);
+      stepperTwo.setCurrentPosition(laststepperposTwo); 
+      delay(500);
+      stepperThree.setCurrentPosition(laststepperposThree);     
+      delay(500);
+      state = MenuMode;
+      goodtogo = true;
+      break;
+    }
+    else if (Xbox.getButtonClick(SELECT))
+    {
+      // No Good
+      //Set operating parameters for stepper motors
+      stepperOne.setCurrentPosition(knownstepperposOne);   
+      delay(500);
+      stepperTwo.setCurrentPosition(knownstepperposTwo); 
+      delay(500); 
+      stepperThree.setCurrentPosition(knownstepperposThree);       
+      delay(500);
+      goodtogo = false;
+      break;
+    }
   }
   return goodtogo;
 }
@@ -1012,7 +1019,7 @@ void runNeckCalibrationState()
 {
   if (PreCalibrationState() == true)
   {
-    Serial.println("I am here 2");
+    Serial.println("PreCalibrated!");
     
     state = MenuMode;
   }
@@ -1056,7 +1063,7 @@ void runNeckCalibrationState()
         }
         else if (Xbox.getButtonClick(START))
         {
-          i = 1;
+          i = 1; j = 1; k = 1;
           WriteCalibrationStepperPosToProm();
           WriteLastStepperPosToProm();
           state = MenuMode; 
@@ -1088,7 +1095,7 @@ void runNeckCalibrationState()
         }
         else if (Xbox.getButtonClick(START))
         {
-          j = 1;
+          i = 1; j = 1; k = 1;
           WriteCalibrationStepperPosToProm();
           WriteLastStepperPosToProm();
           state = MenuMode; 
@@ -1120,7 +1127,7 @@ void runNeckCalibrationState()
         }
         else if (Xbox.getButtonClick(START))
         {
-          k = 1;
+          i = 1; j = 1; k = 1;
           WriteCalibrationStepperPosToProm();
           WriteLastStepperPosToProm();
           state = MenuMode;
@@ -1128,9 +1135,9 @@ void runNeckCalibrationState()
         } 
       }
     }
-    WriteCalibrationStepperPosToProm();
-    WriteLastStepperPosToProm();
-    state = MenuMode; 
+    //WriteCalibrationStepperPosToProm();
+    //WriteLastStepperPosToProm();
+    //state = MenuMode; 
   }
    Serial.println("I am here 3");
 }

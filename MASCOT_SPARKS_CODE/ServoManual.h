@@ -72,10 +72,10 @@ void parallax() {
     alphaLeftPrev = alphaLeft;
     betaLeftPrev = betaLeft;
 
-    Serial.println(centerLeftXMicroseconds);
-    Serial.println(centerLeftZMicroseconds);
-    Serial.println(centerRightXMicroseconds);
-    Serial.println(centerRightZMicroseconds);
+    //Serial.println(centerLeftXMicroseconds);
+    //Serial.println(centerLeftZMicroseconds);
+    //Serial.println(centerRightXMicroseconds);
+    //Serial.println(centerRightZMicroseconds);
   }
 }
 

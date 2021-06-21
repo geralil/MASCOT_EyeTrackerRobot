@@ -52,8 +52,8 @@ void setup() {
   NeckServo.attach(NSPin);
 
   // Loading calibration variables for neck stepper from EEprom
-  //ReadCalibrationStepperPosFromProm();
-  //ReadLastStepperPosFromProm();
+  ReadCalibrationStepperPosFromProm();
+  ReadLastStepperPosFromProm();
 
   /* 
    * Set operating parameters for neck stepper motors 
@@ -78,13 +78,15 @@ void setup() {
   delay(500);
 
   // Loading calibration variables for eye servos and shoulder steppers from Prom
+  NeckServo.write(120);
   ReadCalibrationVariablesFromProm();
 
-  XservoL.writeMicroseconds(centerLeftXMicroseconds);    // -ve left; +ve right
-  ZservoL.writeMicroseconds(centerLeftZMicroseconds);    // -ve up; +ve down
-  XservoR.writeMicroseconds(centerRightXMicroseconds);    // -ve left; +ve right
-  ZservoR.writeMicroseconds(centerRightZMicroseconds);    // -ve down; +ve up
-  NeckServo.write(83);
+  
+  XservoL.writeMicroseconds(1500);    // -ve left; +ve right
+  ZservoL.writeMicroseconds(1500);    // -ve up; +ve down
+  XservoR.writeMicroseconds(1700);    // -ve left; +ve right
+  ZservoR.writeMicroseconds(1500);    // -ve down; +ve up
+  
   
   // Set operating parameters for stepper motors
   stepperY.setMaxSpeed(10000); //SPEED = Steps / second
